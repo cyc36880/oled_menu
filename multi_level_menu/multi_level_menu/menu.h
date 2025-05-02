@@ -44,6 +44,9 @@ enum SpecialInformation
 	/*****上述功能的改进*****/
 	
 	MenuTimeForce = 0x20, //时间列表强制执行。 与MenuTime配合使用，否则无效，无需对此判断，if末尾加return
+	
+	/******** 其 它 **********/
+	MenuHaveOverall = 0x40,//不可使用，其它功能占用该位。菜单列表全局
 };
 
 //菜单时间队列
@@ -69,9 +72,16 @@ typedef struct MENU_AREA
 	struct MENU_AREA *father;   //父类
 	void (*menuinterface)(struct MENU_AREA *target); //菜单内容
 	menu_timems *menu_time;
-	uint16_t userinformation;//用户自定义信息
+	uint16_t userinformation;//特殊功能标记
 }menu_area;
 
+//列表全局队列
+typedef struct MENULISTOVERALL 
+{
+	menu_area *Affiliation; //隶属于
+	void (*menuinterface)(void); //菜单内容
+	struct MENULISTOVERALL *next;
+}MenuListOverall;
 
 //特殊功能队列
 typedef struct SPECIALNFORMATION
@@ -117,7 +127,8 @@ menu_area *MenuListShowTail(menu_area *target);
 //功能：目标菜单首位相连，空指针跳过
 void MakeMenuListRing(menu_area *target);
 
-
+//功能：菜单列表始终执行函数
+MenuListOverall *MenuOverall(menu_area *target);
 
 //功能：特殊功能注册
 //注意：该功能会占用userinformation，使用该功能的菜单不要手动修改userinformation
@@ -126,6 +137,10 @@ void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms);
 //功能：特殊功能检查，触发返回1，否则返回0
 bool TriggerCheck(menu_area *target, enum SpecialInformation function);
 
+
+extern menu_area * TargetMenu; // 实时目标菜单
+extern enum MenuState StatusInformation; //输入设备状态
+extern uint32_t MenuSize;//菜单申请的空间大小
 
 // =========================== 屏 幕 ====================================
 
@@ -145,8 +160,7 @@ typedef struct
 
 extern unsigned char DisplayBuff[]; // 屏幕显示缓存
 extern TypedefScreen ScreenPara; // 屏幕具体参数
-extern menu_area * TargetMenu; // 实时目标菜单
-extern enum MenuState StatusInformation; //输入设备状态
+
 
 // 功能：在目标菜单的相对位置画点
 void MenuSetPoint(menu_area *target, int16_t x, int16_t y, bool w_b); 
@@ -154,6 +168,7 @@ void MenuSetPoint(menu_area *target, int16_t x, int16_t y, bool w_b);
 
 
 // ============================== 其 它 ==================================
+
 
 // 功能：菜单运行函数，为保证正常运行，该函数在while中每秒循环次数应大于2000次
 void MenuRun(void); 

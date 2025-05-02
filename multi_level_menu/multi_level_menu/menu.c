@@ -96,7 +96,7 @@ unsigned char DisplayBuff[BUFFWEIGH* BUFFHIGH] = {0};
 
 
 //清空显示缓存
-void ClearnBuff(void)
+static void ClearnBuff(void)
 {
 	unsigned int i, j = BUFFWEIGH * BUFFHIGH;
 	for(i=0; i<j; i++)
@@ -105,6 +105,23 @@ void ClearnBuff(void)
 
 
 // ========================== 菜 单 ==================================
+
+uint32_t MenuSize = 0;//菜单申请的空间大小
+/*
+	功能：菜单申请空间
+	size：申请空间的字节数
+	@ret：申请空间的首地址，失败为空
+*/
+void *MenuMalloc(uint16_t size)
+{
+	void *addr;
+	addr = malloc(size);
+	if(addr) {
+		MenuSize += size;
+	}
+	return addr;
+}
+
 /*
 *	功能：注册或添加菜单 
 *	x, y, width, high: 为注册菜单单元的位置与大小 
@@ -116,7 +133,7 @@ menu_area * AddToMenuList(uint16_t x, uint16_t y, uint16_t width, uint16_t high,
 	menu_area *p;
 	menu_area *k;
 	
-	p = (menu_area *) malloc(sizeof(menu_area));
+	p = (menu_area *) MenuMalloc(sizeof(menu_area)); //申请内存空间
 	if(!p) return NULL;
 	if(transfer != NULL)  //尾部加入 
 	{
@@ -382,7 +399,7 @@ static void AddToMenuTimeList(menu_area *target, uint16_t ms)
 {
 	if(target == NULL) return; // 检查地址是否有效
 	
-	target->menu_time = (menu_timems *) malloc(sizeof(menu_timems));
+	target->menu_time = (menu_timems *) MenuMalloc(sizeof(menu_timems));
 	if(!(target->menu_time)) return;
 	target->menu_time->counttime=0; //默认起始计数值
 	target->menu_time->timems = ms; // 想要执行时间间隔
@@ -396,7 +413,7 @@ static struct SPECIALNFORMATION *SpecialFunction = NULL;
 /*
 	功能：特殊功能注册
 	target：要注册的菜单
-	function：特殊功能表里的指针，可与
+	function：特殊功能表里的指针，可或
 	ms；延时时间，含MenuTime时，ms为延时，不含时，ms不被使用，一般填NULL
 */
 void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms)
@@ -415,7 +432,7 @@ void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms)
 	}
 	
 	if(SpecialFunction == NULL){
-		SpecialFunction = (TypedefSpeFor *) malloc(sizeof(TypedefSpeFor));
+		SpecialFunction = (TypedefSpeFor *) MenuMalloc(sizeof(TypedefSpeFor));
 		if(!SpecialFunction) return;
 		SpecialFunction->target = target;
 		SpecialFunction->function = function;
@@ -427,7 +444,7 @@ void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms)
 			if(k->next == NULL) break;
 			k = k->next;
 		}
-		p = (TypedefSpeFor *) malloc(sizeof(TypedefSpeFor));
+		p = (TypedefSpeFor *) MenuMalloc(sizeof(TypedefSpeFor));
 		if(!p) return;
 		p->target = target; //目标菜单
 		p->function = function; // 特殊功能
@@ -453,7 +470,43 @@ bool TriggerCheck(menu_area *target, enum SpecialInformation function)
 	}
 	return triggerflag;
 }
+/*
+	说明：隶属于某一菜单，且只有一个的菜单列表，向菜单头赋予指定属性
+	功能：菜单列表始终执行函数
+	target: 列表的任意指针
+*/
+static MenuListOverall *MenuOverallPointer = NULL;
 
+MenuListOverall *MenuOverall(menu_area *target)
+{
+	MenuListOverall *MenuOverallP;
+	MenuListOverall *Tar = NULL;
+	menu_area *p;
+	
+	p = FindMeunListHeard(target);
+	if(!p) return NULL; //未找到菜单头，跳过
+	if(p->userinformation & MenuHaveOverall) return NULL; //已有跳过
+	
+	Tar = (MenuListOverall *)MenuMalloc(sizeof(MenuListOverall)); //申请空间
+	if( !(Tar) ) return NULL; //空间申请失败
+	p->userinformation |= MenuHaveOverall; //菜单头赋予属性
+	
+	if(MenuOverallPointer==NULL){ //创建
+		MenuOverallPointer = Tar;
+	}
+	else{
+		MenuOverallP=MenuOverallPointer;
+		while(MenuOverallP->next){
+			MenuOverallP = MenuOverallP->next;
+		}
+		MenuOverallP->next = Tar;
+	}
+	Tar->Affiliation = target;
+	Tar->menuinterface = NULL;
+	Tar->next = NULL;
+	
+	return Tar;
+}
 // ========================== 图 形 化 =======================
 
 /*
@@ -681,6 +734,26 @@ static void SpecialFunctionRun(menu_area *target)
 	}
 }
 
+//菜单全局显示
+static void MenuListOverallRun(menu_area *target)
+{
+	menu_area *p;
+	MenuListOverall *MenuListOverallP=MenuOverallPointer;
+	
+	if(!MenuListOverallP) return; //是否有全局
+	p = FindMeunListHeard(target);
+	if(!p) return; //是否有菜单
+	if( !(p->userinformation & MenuHaveOverall) ) return; //是否创建
+	
+	while(MenuListOverallP->Affiliation != p){ //找到对应列表头的全局
+		if( !(MenuListOverallP->next) ) return;
+		MenuListOverallP = MenuListOverallP->next;
+	}
+	if(MenuListOverallP->menuinterface){
+		MenuListOverallP->menuinterface();
+	}
+}
+
 /*
 	功能：设备输入状态改变实时目标菜单指针
 */
@@ -730,9 +803,10 @@ void MenuRun(void)
 		SpecialFunctionRun(TargetMenu); //特殊功能运行
 		MenuListInterface(); //依次显示当前菜单列表
 		MenuCheckedStyle(TargetMenu);//菜单选中风格
-		disp_flush();// 刷新屏幕//the end
-		ClearnBuff(); // 清空缓存
+		MenuListOverallRun(TargetMenu); //菜单全局
+		disp_flush();// 刷新屏幕
 		
+		ClearnBuff(); // 清空缓存
 		KeyPutDownFlag = 0; //按键按下标志复位
 		StatusInformation = Menu_noaction; //输入设备状态复位
 		ScreenPara.refresh=0;// 刷新标志复位

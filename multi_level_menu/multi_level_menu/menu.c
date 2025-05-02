@@ -102,7 +102,7 @@ static void EquipmentState(void)
 	}
 	if(KeyState(&StatusInformation)){ //按键扫描
 		if(StatusInformation != Menu_noaction){ //非空闲
-			ScreenPara.refresh = ENABLE; //屏幕刷新
+			MenuRefresh(0); //屏幕刷新
 		}
 	}
 }
@@ -129,7 +129,21 @@ void ClearnBuff(void)
 	for(i=0; i<j; i++)
 		DisplayBuff[i] = 0;
 }
-
+/*
+	功能：屏幕多次刷新注册
+	mod：  0：依附于本有的刷新次数，无则创建  1：创建刷新
+*/
+void MenuRefresh(bool mod)
+{
+	if(mod==0) {
+		if(ScreenPara.refresh == 0) {
+			ScreenPara.refresh += 1;
+		}
+	}
+	else {
+		ScreenPara.refresh += 1;
+	}
+}
 
 // ========================== 菜 单 ==================================
 
@@ -921,13 +935,13 @@ void MenuHeartTime(void)
 /*
 	功能：菜单列表各个菜单内容循环显示
 */
-static void MenuListInterface(void)
+static void MenuListInterface(menu_area *target)
 {
-	menu_area *p = TargetMenu;
+	menu_area *p = NULL;
 	menu_area *pTail = NULL;
 		
-	p = MenuListShowHead(p); //显示头
-	pTail = MenuListShowTail(p);//显示尾
+	p = MenuListShowHead(target); //显示头
+	pTail = MenuListShowTail(target);//显示尾
 	
 	for( ; ; )
 	{
@@ -1110,23 +1124,23 @@ void MenuRun(void)
 	
 	if(RefreshFlagForHeart == ENABLE){ //时间列表刷新标志
 		RefreshFlagForHeart = DISABLE;
-		ScreenPara.refresh = ENABLE;
+		MenuRefresh(0);
 	}
 	
-	if( (ScreenPara.refresh==ENABLE) && TargetMenu)
+	if((ScreenPara.refresh) && TargetMenu)
 	{
 		StateToPointer(); // 设备输入状态改变实时目标菜单指针
 		
 		SpecialFunctionRun(TargetMenu); //特殊功能运行
 		MenuListOverallRun(TargetMenu); //菜单全局
-		MenuListInterface(); //依次显示当前菜单列表
+		MenuListInterface(TargetMenu); //依次显示当前菜单列表
 		MenuCheckedStyle(TargetMenu);//菜单选中风格
 		
 		disp_flush();// 刷新屏幕
 		
 		ClearnBuff(); // 清空缓存
 		StatusInformation = Menu_noaction; //输入设备状态复位
-		ScreenPara.refresh=DISABLE;// 刷新标志复位
+		if(ScreenPara.refresh != 0) ScreenPara.refresh--;// 刷新标志复位
 	}
 }
 

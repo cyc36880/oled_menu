@@ -1,5 +1,5 @@
-#include "menuconfig.h"
 #include "menu.h"
+#include "menuconfig.h"
 #include "oledfont.h" //字体文件
 #include "menufontshow.h" //字符函数
 #include "Graphicalfunctions.h" // 图形化函数
@@ -7,7 +7,6 @@
 uint16_t id = MENUHEARDID;
 
 void test1_1(menu_area *target);
-void test1_2(menu_area *target);
 void always(void);
 
 menu_area menutest0;
@@ -27,8 +26,6 @@ static void MakeMenu(void)
 	BatchFastSimilarMenu(&menuarray[0], &menuarray[0], arraynum, 2, test1_1); //批量菜单初始化
 	LinkToParentClass(&menutest0, &menuarray[0]);
 	
-	menuarray[arraynum-1].menuinterface = test1_2; //末尾特殊处理
-	menuarray[arraynum-1].checked = DISABLE;
 	AddToSpecialFunction(&menuarray[arraynum-1], EnterMenu, 0); //添加特殊功能
 	
 	MenuOverall(&menuarray[0])->menuinterface = always;
@@ -44,16 +41,13 @@ static void MakeMenu(void)
 */
 void test1_1(menu_area *target)
 {
-	MenuShowNum(target, 0, 0, 2, target->id);
-}
-
-void test1_2(menu_area *target)
-{
 	if(TriggerCheck(target, EnterMenu)) {
 		TargetMenu = FindMenuOfID(TargetMenu, id, 0);
 		return;
 	}
+	MenuShowNum(target, 0, 0, 2, target->id);
 }
+
 
 
 void always(void)

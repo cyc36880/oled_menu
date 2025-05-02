@@ -221,7 +221,7 @@ typedef struct
 {
 	const uint16_t screenwidth; //屏幕宽度
 	const uint16_t screenhigh;  //屏幕高度 (向上除8)
-	bool refresh; //刷新标志
+	uint8_t refresh; //刷新标志
 }TypedefScreen;
 
 extern enum ScreenShowManner SCREENSHOWMANNER; //屏幕显示方式
@@ -230,7 +230,8 @@ extern enum GraphicsShowManner GRAPHICSSHOWMANNER;//图形显示方式
 extern unsigned char DisplayBuff[]; // 屏幕显示缓存
 extern TypedefScreen ScreenPara; // 屏幕具体参数
 
-
+//功能：屏幕多次刷新注册  mod > 0：依附于本有的刷新次数，无则创建  1：创建刷新
+void MenuRefresh(bool mod);
 // 功能：在目标菜单的相对位置画点
 void MenuSetPoint(menu_area *target, int16_t x, int16_t y, bool w_b); 
 //清空显示缓存

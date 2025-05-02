@@ -1,4 +1,10 @@
 multi_level_menu\menuconfig.o: ..\multi_level_menu\menuconfig.c
+multi_level_menu\menuconfig.o: ..\multi_level_menu\menu.h
+multi_level_menu\menuconfig.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+multi_level_menu\menuconfig.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+multi_level_menu\menuconfig.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+multi_level_menu\menuconfig.o: ..\multi_level_menu\oled.h
+multi_level_menu\menuconfig.o: ..\multi_level_menu\menu.h
 multi_level_menu\menuconfig.o: ..\multi_level_menu\menuconfig.h
 multi_level_menu\menuconfig.o: ../Core/Inc/main.h
 multi_level_menu\menuconfig.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h
@@ -8,7 +14,6 @@ multi_level_menu\menuconfig.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal
 multi_level_menu\menuconfig.o: ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h
 multi_level_menu\menuconfig.o: ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f407xx.h
 multi_level_menu\menuconfig.o: ../Drivers/CMSIS/Include/core_cm4.h
-multi_level_menu\menuconfig.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 multi_level_menu\menuconfig.o: ../Drivers/CMSIS/Include/cmsis_version.h
 multi_level_menu\menuconfig.o: ../Drivers/CMSIS/Include/cmsis_compiler.h
 multi_level_menu\menuconfig.o: ../Drivers/CMSIS/Include/cmsis_armcc.h
@@ -37,12 +42,6 @@ multi_level_menu\menuconfig.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal
 multi_level_menu\menuconfig.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 multi_level_menu\menuconfig.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
 multi_level_menu\menuconfig.o: ../Core/Inc/spi.h
-multi_level_menu\menuconfig.o: ..\multi_level_menu\menu.h
-multi_level_menu\menuconfig.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
-multi_level_menu\menuconfig.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
-multi_level_menu\menuconfig.o: ..\multi_level_menu\oled.h
-multi_level_menu\menuconfig.o: ..\multi_level_menu\menu.h
-multi_level_menu\menuconfig.o: ..\multi_level_menu\menuconfig.h
 multi_level_menu\menuconfig.o: ..\multi_level_menu\oledfont.h
 multi_level_menu\menuconfig.o: ..\multi_level_menu\menufontshow.h
 multi_level_menu\menuconfig.o: ..\multi_level_menu\Graphicalfunctions.h

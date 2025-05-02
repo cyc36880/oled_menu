@@ -20,7 +20,19 @@ extern const unsigned char HZK16x16index[];
 //汉字库 阴码 列行式 逆向 16x16
 extern const unsigned char HZK16x16[][16];
 
+
+
+/****************************************/
+/*************** 图 像 ******************/
+/****************************************/
+
 extern const unsigned char picture0[];
 
+
+
+
 #endif
+
+
+
 

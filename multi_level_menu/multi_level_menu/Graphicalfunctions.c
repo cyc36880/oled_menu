@@ -3,7 +3,7 @@
 
 // ======================= 图 形 化 函 数 ========================
 
-// 读点
+
 unsigned char ReadPoint(int16_t x, int16_t y)
 {
 	int px = x, py = (int)(y/8);
@@ -16,7 +16,7 @@ unsigned char ReadPoint(int16_t x, int16_t y)
 	
 	return dat;
 }
-// 画点
+
 void WritePoint(int16_t x, int16_t y, uint8_t w_d) 
 {
 	int px = x, py = (int)(y/8);
@@ -42,11 +42,54 @@ unsigned char read_point(int16_t x, int16_t y)
 // 画点
 void write_point(int16_t x, int16_t y, uint8_t w_d) 
 {
-	if(GRAPHICSSHOWMANNER == GraphicsRollColor) { //反转显示
-		WritePoint(x,  y,  !read_point(x, y));
-		return;
+	switch(GRAPHICSSHOWMANNER)
+	{
+		case GraphicsNormal:   
+			WritePoint(x,  y,  w_d);
+			break;
+		case GraphicsRollColor: //反转显示
+			WritePoint(x,  y,  !read_point(x, y));
+			break;
+		
+		default:
+			WritePoint(x,  y,  w_d);
+			break;
 	}
-	WritePoint(x,  y,  w_d);
+}
+
+//横向快速画线
+static void FastLineT(int16_t x, int16_t y, uint16_t w)
+{
+	while(w) {
+		write_point(x+w-1, y, 1);
+		w--;
+	}
+}
+//纵向快速画线
+static void FastLineL(int16_t x, int16_t y, uint16_t h)
+{
+	while(h){
+		write_point(x, y+h-1, 1);
+		h--;
+	}
+}
+//空心矩形
+void DrawRect(int16_t x, int16_t y, uint16_t w, uint16_t h)
+{
+	if(h==0 || w==0) return;
+	FastLineT(x, y, w);
+	FastLineT(x, y+h-1, w);
+	if(h<3) return;
+	FastLineL(x, y+1, h-2);
+	FastLineL(x+w-1, y+1, h-2);
+}
+//实心矩形
+void DrawFillRect(int16_t x, int16_t y, uint16_t w, uint16_t h)
+{
+	while(h) {
+		FastLineT(x, y+h-1, w);
+		h--;
+	}
 }
 
 // 画线
@@ -186,22 +229,22 @@ void DrawCircleHelper(int x0, int y0, unsigned char r, unsigned char cornername)
     if (cornername & 0x4)
     {
       write_point(x0 + x, y0 + y,1);
-      write_point(x0 + y, y0 + x,1);
+      if(x<y) write_point(x0 + y, y0 + x,1);
     }
     if (cornername & 0x2)
     {
       write_point(x0 + x, y0 - y,1);
-      write_point(x0 + y, y0 - x,1);
+      if(x<y) write_point(x0 + y, y0 - x,1);
     }
     if (cornername & 0x8)
     {
       write_point(x0 - y, y0 + x,1);
-      write_point(x0 - x, y0 + y,1);
+      if(x<y) write_point(x0 - x, y0 + y,1);
     }
     if (cornername & 0x1)
     {
       write_point(x0 - y, y0 - x,1);
-      write_point(x0 - x, y0 - y,1);
+      if(x<y) write_point(x0 - x, y0 - y,1);
     }
   }
 }
@@ -243,19 +286,19 @@ void DrawFillCircleHelper(int x0, int y0, unsigned char r, unsigned char cornern
     if (cornername & 0x1)
     {
       DrawFastVLine(x0+x, y0-y, 2*y+1+delta);
-      DrawFastVLine(x0+y, y0-x, 2*x+1+delta);
+      if(x<y) DrawFastVLine(x0+y, y0-x, 2*x+1+delta);
     }
 
     if (cornername & 0x2)
     {
       DrawFastVLine(x0-x, y0-y, 2*y+1+delta);
-      DrawFastVLine(x0-y, y0-x, 2*x+1+delta);
+      if(x<y) DrawFastVLine(x0-y, y0-x, 2*x+1+delta);
     }
   }
 }
-void DrawFillRect2(unsigned int x,unsigned int y,unsigned int w,unsigned char h)
+void DrawFillRect2(int x,int y,unsigned int w,unsigned char h)
 {
-	unsigned int i,j;
+	int i,j;
 	for(j=y;j<=y+h;j++){
 		for(i=x;i<=x+w;i++){
 			write_point(i,j,1);
@@ -264,12 +307,14 @@ void DrawFillRect2(unsigned int x,unsigned int y,unsigned int w,unsigned char h)
 }
 void DrawfillRoundRect(int x, int y, unsigned char w, unsigned char h, unsigned char r)
 {
-  DrawFillRect2(x+r, y, w-2*r, h);
+  DrawFillRect2(x+r, y, w-2*r-1, h);
 
   // draw four corners
   DrawFillCircleHelper(x+w-r-1, y+r, r, 1, h-2*r-1);
   DrawFillCircleHelper(x+r, y+r, r, 2, h-2*r-1);
 }
+
+
 
 //多边形变换
 void PolygonTransformation(int16_t x0,int16_t y0,uint16_t r, uint16_t n)
@@ -503,7 +548,94 @@ void PictureShow(menu_area *target, const uint8_t *psize, const uint8_t *p, int1
 }
 
 
+//========================== 线 立 方 体 ==============================
+
+#define PI 3.1415926
+#define SX 4
+#define SY 6
+#define DX PI / SX
+#define DY PI * 2 / SY
+#define X(a, b) (cx + v[a][b].x * r), (cy + v[a][b].y * r)
+
+typedef struct { 
+	double x, y;
+} Vec;
+static Vec v[SX + 1][SY + 1];
+
+static void calc(double i, double j, double rot, Vec* v) {
+    double x = sin(i) * cos(j), y = sin(i) * sin(j), z = cos(i),
+        s = sin(rot), c = cos(rot), c1 = 1 - c, u = 1 / sqrt(3), u2 = u * u;
+    v->x = x * (c + u2 * c1) + y * (u2 * c1 - u * s) + z * (u2 * c1 + u * s);
+    v->y = x * (u2 * c1 + u * s) + y * (c + u2 * c1) + z * (u2 * c1 - u * s);
+}
 
 
+//线立方体 cx、cy：中心坐标  w、h宽高  rot：以0.1为单位递增即可
+void Linecube(int cx, int cy, int w, int h, double rot)
+{
+	int  r = h * 0.375;
+	for(int i = 0; i <= SX; ++i) for(int j = 0; j <= SY; ++j) 
+			calc(i * DX, j * DY, rot, &v[i][j]);
+			
+	for(int i = 0; i < SX; ++i) for(int j = 0; j < SY; ++j) {
+		DrawLine(X(i, j), X(i + 1, j));
+		DrawLine(X(i, j), X(i, j + 1));
+	}
+}
 
+//========================== 线 正 方 体 ==============================
 
+// 线正方体 centerX、centerY 中心坐标 ， size：边长 ， rotx roty rotz：绕xyz轴的角度（弧度制）
+void DrawCube(int centerX, int centerY, int size, float rotX, float rotY, float rotZ)
+{
+    // 计算立方体各个顶点的位置
+    float halfSize = size / 2.0f;
+    float vertices[8][3] = {
+        {-halfSize, -halfSize, -halfSize},
+        {halfSize, -halfSize, -halfSize},
+        {halfSize, halfSize, -halfSize},
+        {-halfSize, halfSize, -halfSize},
+        {-halfSize, -halfSize, halfSize},
+        {halfSize, -halfSize, halfSize},
+        {halfSize, halfSize, halfSize},
+        {-halfSize, halfSize, halfSize}
+    };
+
+    // 绕 X 轴旋转
+    for (int i = 0; i < 8; i++) {
+        float y = vertices[i][1];
+        float z = vertices[i][2];
+        vertices[i][1] = y * cos(rotX) + z * sin(rotX);
+        vertices[i][2] = -y * sin(rotX) + z * cos(rotX);
+    }
+
+    // 绕 Y 轴旋转
+    for (int i = 0; i < 8; i++) {
+        float x = vertices[i][0];
+        float z = vertices[i][2];
+        vertices[i][0] = x * cos(rotY) + z * sin(rotY);
+        vertices[i][2] = -x * sin(rotY) + z * cos(rotY);
+    }
+
+    // 绕 Z 轴旋转
+    for (int i = 0; i < 8; i++) {
+        float x = vertices[i][0];
+        float y = vertices[i][1];
+        vertices[i][0] = x * cos(rotZ) - y * sin(rotZ);
+        vertices[i][1] = x * sin(rotZ) + y * cos(rotZ);
+    }
+
+    // 画立方体的边线
+    DrawLine( centerX + vertices[0][0], centerY + vertices[0][1], centerX + vertices[1][0], centerY + vertices[1][1]);
+    DrawLine(centerX + vertices[1][0], centerY + vertices[1][1], centerX + vertices[2][0], centerY + vertices[2][1]);
+    DrawLine( centerX + vertices[2][0], centerY + vertices[2][1], centerX + vertices[3][0], centerY + vertices[3][1]);
+    DrawLine(centerX + vertices[3][0], centerY + vertices[3][1], centerX + vertices[0][0], centerY + vertices[0][1]);
+    DrawLine( centerX + vertices[4][0], centerY + vertices[4][1], centerX + vertices[5][0], centerY + vertices[5][1]);
+    DrawLine( centerX + vertices[5][0], centerY + vertices[5][1], centerX + vertices[6][0], centerY + vertices[6][1]);
+    DrawLine( centerX + vertices[6][0], centerY + vertices[6][1], centerX + vertices[7][0], centerY + vertices[7][1]);
+		DrawLine(centerX + vertices[7][0], centerY + vertices[7][1], centerX + vertices[4][0], centerY + vertices[4][1]);
+		DrawLine( centerX + vertices[0][0], centerY + vertices[0][1], centerX + vertices[4][0], centerY + vertices[4][1]);
+		DrawLine(centerX + vertices[1][0], centerY + vertices[1][1], centerX + vertices[5][0], centerY + vertices[5][1]);
+		DrawLine( centerX + vertices[2][0], centerY + vertices[2][1], centerX + vertices[6][0], centerY + vertices[6][1]);
+		DrawLine(centerX + vertices[3][0], centerY + vertices[3][1], centerX + vertices[7][0], centerY + vertices[7][1]);
+}

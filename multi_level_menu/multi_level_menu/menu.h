@@ -22,8 +22,12 @@
 
 #define MENUHEARDID 1 //菜单列表起始ID
 
-#define ENABLE   1 //使能
-#define DISABLE 0 //失能
+#ifndef ENABLE
+	#define ENABLE  1 //使能
+#endif
+#ifndef DISABLE
+	#define DISABLE 0 //失能
+#endif
 
 // 菜单操作
 enum MenuState
@@ -49,8 +53,8 @@ enum SpecialInformation
 	
 	MenuTimeForce = 0x20, //！！！时间列表强制执行。 与MenuTime配合使用，否则无效，无需对此判断，if末尾必须加return！！！
 	/*
-		注册时，不加该标志，则仅当菜单显示时才能正常计数。
-		加入该标志，由中断调取相应函数，并且只要处于该菜单所处的列表中，就能正常计数，并调用相应函数
+		↑↑↑ 注册时，不加该标志，则仅当菜单显示时才能正常计数。
+		！！加入该标志，由中断调取相应函数，并且只要处于该菜单所处的列表中，就能正常计数，并调用相应函数
 	*/
 	
 	/******** 其 它 **********/
@@ -145,8 +149,10 @@ menu_area *FindMenuOfID(menu_area *target, uint16_t id, bool mod);
 //功能：目标菜单首尾相连，空指针跳过
 void MakeMenuListRing(menu_area *target);
 
-//功能：菜单列表始终执行函数
+//功能：菜单列表始终执行函数 <仅对当前列表>
 MenuListOverall *MenuOverall(menu_area *target);
+
+
 
 //功能：对已有的时间添加至菜单 <仅针对时间的特殊功能注册>
 void SetMenuTime(menu_area *target, menu_timems *menutime_obj, uint16_t function, uint16_t ms);
@@ -179,7 +185,8 @@ extern menu_area * TargetMenu; // 实时目标菜单
 
 extern enum MenuState StatusInformation; //输入设备状态
 extern enum MenuState StatusInformationAlways; // 输入设备状态 <不会改变>
-extern uint8_t InuptEnable; //输入使用
+extern uint8_t InuptEnable; //输入使能
+extern uint8_t ResponseEnable; //菜单切换响应
 
 
 extern uint32_t MenuMallocSize;//菜单申请的空间大小
@@ -193,7 +200,9 @@ extern uint32_t MenuMallocSize;//菜单申请的空间大小
 
 
 
-
+void MenuAlwaysRun_PH(void);
+void MenuAlwaysRun_PL(void);
+void AlwaysRun(void);
 
 // =========================== 屏 幕 ====================================
 
@@ -213,7 +222,7 @@ enum GraphicsShowManner //图形显示方式
 {
 	GraphicsNormal,  //正常
 	GraphicsCover, //覆盖
-	GraphicsRollColor //反色
+	GraphicsRollColor //反色（读取目标点，取反）
 };
 
 //屏幕参数
@@ -256,9 +265,54 @@ void ClearnBuff(void);
 // 功能：菜单运行函数，为保证正常运行，该函数在while中每秒循环次数应大于2000次
 void MenuRun(void); 
 // 功能：菜单心跳执行，每1ms执行该函数
-void MenuHeartTime(void);
+void MenuTicker_ms(void);
 //菜单心跳开始标志 放在最后 置1运行
 extern bool MenuHeartTimeStart; 
+
+
+
+
+
+
+/*****************************************
+ ***************** Other *****************
+*****************************************/
+
+// ************ 函 数 定 时 执 行 ************
+
+enum FUNCTINOTICKEROPTIONS
+{
+	normalRun = 0,
+	interruptRun,
+};
+typedef struct FUNCTINOTICKER
+{
+	uint32_t count; //计数
+	uint32_t ms;  //目标
+	struct FUNCTINOTICKER *next; //下一个
+	void (*Function)(void); //执行函数
+	enum FUNCTINOTICKEROPTIONS RunMod; //模式
+	bool Flag; //执行标志
+	bool run; //运行 <使能>
+}FunctionTicker;
+
+FunctionTicker *SetFunctionTicker(FunctionTicker *FTtarget, uint32_t ms, enum FUNCTINOTICKEROPTIONS RunMod, void (*Function)(void));
+//功能：函数定时执行
+FunctionTicker *AddToFunctionTicker(uint32_t ms, enum FUNCTINOTICKEROPTIONS RunMod, void (*Function)(void));
+
+
+
+
+// ****************** 单 次 运 行 ******************
+
+typedef struct RUNONE
+{
+	unsigned int dat;
+	unsigned char floag;
+}TypeRunOne; //需初始化为 {1, 0};
+
+/* t=0: dat相等运行一次  t=1：dat2改变运行一次!!!只能被调用一次!!! */
+bool tRunOne(TypeRunOne *RunOne, bool t, unsigned int dat1,unsigned int dat2);
 
 #endif
 

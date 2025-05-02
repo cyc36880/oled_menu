@@ -428,7 +428,6 @@ void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint16_t ascw, cons
 static uint8_t MenuSerialBuf[MenuSerialBufSzie] = {0}; //串口缓冲区
 uint16_t MenuSerialRxNum = 0; //接收数量，最大为MenuSerialBufSzie
 static uint16_t MenuSerialShowPPos[2] = {0, 0}; //最后一个显示字符的下一个坐标
-const uint16_t windowsszie = MENUSERIALWINDOWWIDTH*MENUSERIALWINDOWHIGH; //窗口大小
 
 static uint16_t SerialstartShow = 0; //显示起始位置
 static uint16_t MenuSerialShowP = 0; //显示截止位置
@@ -564,6 +563,44 @@ void MenuPaddingSerialBuf(uint8_t dat)
 		MenuSerialShowPPos[0] = 0;
 	}
 	MenuSerialShowPPos[0]++;
+}
+
+
+/*
+	串口字符串匹配
+	@ret 1:含由匹配字符 0：匹配失败
+*/
+uint8_t SerStrMatching(const uint8_t *str)
+{
+	uint16_t strstart = SerialstartShow;
+	uint16_t strend = MenuSerialShowP;
+	uint16_t mystrtotal;
+	
+	uint8_t matnum = 0;
+	
+	mystrtotal = mystrlen(str);
+
+	if(mystrtotal > MenuSerialRxNum) {
+		
+		return 0;
+	}
+	
+	for(; strstart != strend; ) {
+		if(MenuSerialBuf[strstart] == str[matnum]) {
+			matnum++;
+		}
+		else {
+			matnum = 0;
+		}
+		if(matnum == mystrtotal) {
+			return 1;
+		}
+		
+		if(++strstart == MenuSerialBufSzie) {
+			strstart = 0;
+		}
+	}
+	return 0;
 }
 
 

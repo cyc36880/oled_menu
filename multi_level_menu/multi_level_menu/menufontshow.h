@@ -50,6 +50,13 @@ void SerialCharacterText(menu_area *target, int16_t x, int16_t y);
 //Çå¿Õ´®¿ÚÏÔÊ¾
 void ClearnSerialShowBuf(void);
 
+/*
+	´®¿Ú×Ö·û´®Æ¥Åä
+	@ret 1:º¬ÓÉÆ¥Åä×Ö·û 0£ºÆ¥ÅäÊ§°Ü
+*/
+uint8_t SerStrMatching(const uint8_t *str);
+	
+
 
 #endif
 

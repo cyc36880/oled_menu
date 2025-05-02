@@ -113,7 +113,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if(htim == &htim2)
 	{
-		MenuHeartTime();
+		MenuTicker_ms();
 	}
 }
 /* USER CODE END 1 */

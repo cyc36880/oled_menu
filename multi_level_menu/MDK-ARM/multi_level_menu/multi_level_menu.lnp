@@ -30,11 +30,11 @@
 "multi_level_menu\stm32f4xx_hal_tim_ex.o"
 "multi_level_menu\stm32f4xx_hal_uart.o"
 "multi_level_menu\system_stm32f4xx.o"
-"multi_level_menu\menu.o"
-"multi_level_menu\oled.o"
 "multi_level_menu\menuconfig.o"
+"multi_level_menu\menu.o"
 "multi_level_menu\menufontshow.o"
 "multi_level_menu\graphicalfunctions.o"
+"multi_level_menu\oled.o"
 "multi_level_menu\oledfont.o"
 --nodebug --strict --scatter "multi_level_menu\multi_level_menu.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols

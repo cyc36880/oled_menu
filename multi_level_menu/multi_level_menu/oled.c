@@ -52,20 +52,25 @@ static void OLED_Clear()             //清屏
 //刷新整个屏幕
 void disp_flush(void)
 {
-	u16 i, j;
-	for(i = 0; i < ScreenPara.screenhigh; i++)
-	{
-		OLED_Set_Pos(0,i);
-		for(j = 0; j < SCREENWIDTH; j++)
-		{
-			if(SCREENSHOWMANNER == ScreenNormal) { //正常显示
-				OLED_WR_Byte(DisplayBuff[i*SCREENWIDTH + j], OLED_DATA);
-			}
-			else if(SCREENSHOWMANNER == ScreenRollback) { //反转显示
-				OLED_WR_Byte(~DisplayBuff[i*SCREENWIDTH + j], OLED_DATA);
-			}
-		}
-	}
+//	u16 i, j;
+//	for(i = 0; i < ScreenPara.screenhigh; i++)
+//	{
+//		OLED_Set_Pos(0,i);
+//		for(j = 0; j < SCREENWIDTH; j++)
+//		{
+//			if(SCREENSHOWMANNER == ScreenNormal) { //正常显示
+//				OLED_WR_Byte(DisplayBuff[i*SCREENWIDTH + j], OLED_DATA);
+//			}
+//			else if(SCREENSHOWMANNER == ScreenRollback) { //反转显示
+//				OLED_WR_Byte(~DisplayBuff[i*SCREENWIDTH + j], OLED_DATA);
+//			}
+//		}
+//	}
+	//改变了oled初始化的默认值为0x00（逐行，可以自动回到下一行开头），原来为0x02（仅逐行，自动回到本行开头）
+	OLED_Set_Pos(0,0); //避免刷新错位
+	OLED_DC_Set();
+	OLED_CS_Clr();
+	HAL_SPI_Transmit_DMA(&hspi1, DisplayBuff, SCREENWIDTH*ScreenPara.screenhigh); // 硬件 DMA SPI
 }
 
 
@@ -98,7 +103,7 @@ void OLED_Init(void)     //初始化
 	OLED_WR_Byte(0xDB,OLED_CMD);//--set vcomh
 	OLED_WR_Byte(0x40,OLED_CMD);//Set VCOM Deselect Level
 	OLED_WR_Byte(0x20,OLED_CMD);//-Set Page Addressing Mode (0x00/0x01/0x02)
-	OLED_WR_Byte(0x02,OLED_CMD);//
+	OLED_WR_Byte(0x00,OLED_CMD);// 默认为0x02
 	OLED_WR_Byte(0x8D,OLED_CMD);//--set Charge Pump enable/disable
 	OLED_WR_Byte(0x14,OLED_CMD);//--set(0x10) disable
 	OLED_WR_Byte(0xA4,OLED_CMD);// Disable Entire Display On (0xa4/0xa5)

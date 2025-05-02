@@ -61,12 +61,12 @@ void Error_Handler(void);
 #define K1_GPIO_Port GPIOE
 #define K0_Pin GPIO_PIN_4
 #define K0_GPIO_Port GPIOE
-#define OLED_CS_Pin GPIO_PIN_4
-#define OLED_CS_GPIO_Port GPIOA
 #define OLED_RST_Pin GPIO_PIN_6
 #define OLED_RST_GPIO_Port GPIOA
-#define OLED_DC_Pin GPIO_PIN_4
-#define OLED_DC_GPIO_Port GPIOC
+#define OLED_DC_Pin GPIO_PIN_0
+#define OLED_DC_GPIO_Port GPIOB
+#define OLED_CS_Pin GPIO_PIN_1
+#define OLED_CS_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

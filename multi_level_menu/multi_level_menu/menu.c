@@ -1,14 +1,15 @@
 #include "menu.h"
 #include "Graphicalfunctions.h"
 
-
+void FunctionTickerRun(void); //在while中查询函数是否执行
+void FunctionTickerRunIRQ(void); //在中断中查询函数是否该执行
 // ================================= 设 备 ========================================
 
 enum MenuState StatusInformation = Menu_noaction; //输入设备状态
 enum MenuState StatusInformationAlways = Menu_noaction; // 输入设备状态 <不会改变>
 
-uint8_t InuptEnable = ENABLE;
-
+uint8_t InuptEnable = ENABLE; //输入响应
+uint8_t ResponseEnable = ENABLE; //菜单切换响应
 
 /*
 	* 功能：输入设备状态
@@ -658,7 +659,7 @@ MenuListOverall *MenuOverall(menu_area *target)
 		}
 		MenuOverallP->next = Tar;
 	}
-	Tar->Affiliation = target;
+	Tar->Affiliation = p;
 	Tar->menuinterface = NULL;
 	Tar->next = NULL;
 	
@@ -731,7 +732,7 @@ void ScrollingDisplay_Y(menu_area *target, int16_t showSY, uint8_t showEY, int16
 	if(target->y < TarSY) {
 		ChangeMenuY(target, showSY, showEY, TarSY-target->y);
 	}
-	else if(target->y+target->high >= TarEY) {
+	else if(target->y+target->high-1 > TarEY) {
 		ChangeMenuY(target, showSY, showEY, TarEY-target->y - target->high);
 	}
 }
@@ -770,22 +771,13 @@ void MenuSetPoint(menu_area *target, int16_t x, int16_t y, bool w_b)
 	target: 目标菜单
 */
 static void DrawMenuRectangle(menu_area *target)
-{
-	int16_t x1=0, y1=0, x2=0, y2=0;
-		
+{	
 	if(target->width<=0 || target->high<=0) return;
 	if(target->x>=SCREENWIDTH || target->y>=SCREENHIGH) return;
 	if(target->x+target->width<0 || target->y+target->high<0) return;
 	
-	x1 = target->x;
-	y1 = target->y;
-	x2 = x1 + target->width-1;
-	y2 = y1 + target->high-1;
-	
-	DrawLine(x1, y1, x2, y1);
-	DrawLine(x1, y1+1, x1, y2-1);
-	DrawLine(x2, y2, x1, y2);
-	DrawLine(x2, y2-1, x2, y1+1);
+
+	DrawfillRoundRect(target->x, target->y, target->width, target->high, 3);
 }
 
 
@@ -869,7 +861,7 @@ static menu_area *FindMeunListTailForHeart(menu_area *target)
 bool MenuHeartTimeStart = DISABLE; //时间列表开始标志
 static bool RefreshFlagForHeart = DISABLE; //时间列表刷新标志
 
-void MenuHeartTime(void)
+static void MenuHeartTime(void)
 {
 	menu_area *p = TargetMenu; //菜单
 	menu_area *MenuTail = NULL; //菜单尾
@@ -878,8 +870,6 @@ void MenuHeartTime(void)
 	
 	uint8_t flag = 0;
 		
-	if(MenuHeartTimeStart==DISABLE) return; //是否开始
-	
 	if(p==NULL) return; //检查地址是否有效
 	
 	MenuShowHeard = MenuListShowHeadForHeart(p);// 找到开始显示的头
@@ -931,6 +921,16 @@ void MenuHeartTime(void)
 		p=p->next;
 	}
 }
+
+//菜单心跳时钟
+void MenuTicker_ms(void)
+{
+	if(MenuHeartTimeStart==DISABLE) return; //是否开始
+	
+	MenuHeartTime();
+	FunctionTickerRunIRQ();
+}
+
 
 /*
 	功能：菜单列表各个菜单内容循环显示
@@ -1077,6 +1077,8 @@ static void StateToPointer(void)
 {
 	menu_area *p = NULL;
 	
+	if(ResponseEnable == DISABLE) return;
+	
 	switch(StatusInformation)
 	{
 		case Menu_up: 		TargetMenu=NextCancheMenuList(TargetMenu, -1);break;
@@ -1112,7 +1114,9 @@ static void StateToPointer(void)
 */
 static void MenuCheckedStyle(menu_area *target)
 {
+	GRAPHICSSHOWMANNER = GraphicsRollColor;
 	DrawMenuRectangle(target); // 用户菜单选中
+	GRAPHICSSHOWMANNER = GraphicsNormal;
 }
 
 /*
@@ -1121,6 +1125,7 @@ static void MenuCheckedStyle(menu_area *target)
 void MenuRun(void)
 {
 	EquipmentState(); //输入设备
+	FunctionTickerRun();
 	
 	if(RefreshFlagForHeart == ENABLE){ //时间列表刷新标志
 		RefreshFlagForHeart = DISABLE;
@@ -1131,18 +1136,150 @@ void MenuRun(void)
 	{
 		StateToPointer(); // 设备输入状态改变实时目标菜单指针
 		
+		ClearnBuff(); // 清空缓存
+		MenuAlwaysRun_PH();
 		SpecialFunctionRun(TargetMenu); //特殊功能运行
 		MenuListOverallRun(TargetMenu); //菜单全局
 		MenuListInterface(TargetMenu); //依次显示当前菜单列表
 		MenuCheckedStyle(TargetMenu);//菜单选中风格
-		
+		MenuAlwaysRun_PL();
 		disp_flush();// 刷新屏幕
 		
-		ClearnBuff(); // 清空缓存
 		StatusInformation = Menu_noaction; //输入设备状态复位
 		if(ScreenPara.refresh != 0) ScreenPara.refresh--;// 刷新标志复位
 	}
+	AlwaysRun();
 }
+
+
+
+
+
+
+/*****************************************
+ ***************** Other *****************
+*****************************************/
+
+// ************ 函 数 定 时 执 行 ************
+
+static FunctionTicker *FunctionTickerPointer = NULL;
+
+
+FunctionTicker *SetFunctionTicker(FunctionTicker *FTtarget, uint32_t ms, enum FUNCTINOTICKEROPTIONS RunMod, void (*Function)(void))
+{
+	if(FTtarget == NULL) return NULL;
+	
+	if(FunctionTickerPointer == NULL) { //头指针是否为空
+		FunctionTickerPointer = FTtarget;
+	}
+	else {
+		FunctionTicker *Tail = FunctionTickerPointer;
+		
+		while(Tail->next) {
+			Tail=Tail->next;
+		}
+		Tail->next = FTtarget;
+	}
+	FTtarget->next = NULL;
+	FTtarget->run = ENABLE;
+	FTtarget->Flag = DISABLE;
+	
+	FTtarget->ms = ms;
+	FTtarget->count = 0;
+	FTtarget->RunMod = RunMod;
+	FTtarget->Function = Function;
+	
+	return FTtarget;
+}
+/*
+	功能：函数定时执行
+	ms：定时时间
+	RunMod：模式  normalRun或interruptRun
+*/
+FunctionTicker *AddToFunctionTicker(uint32_t ms, enum FUNCTINOTICKEROPTIONS RunMod, void (*Function)(void))
+{
+	FunctionTicker *FTtarget;
+	
+	FTtarget = MenuMalloc(sizeof(FunctionTicker));
+	
+	if(FTtarget == NULL) return NULL;
+	
+	return SetFunctionTicker(FTtarget, ms, RunMod, Function);
+}
+
+/*
+	功能：在中断中查询函数是否该执行
+*/
+void FunctionTickerRunIRQ(void)
+{
+	FunctionTicker *p = FunctionTickerPointer;
+	while(p)
+	{
+		if(p->run == ENABLE) {
+			if(++p->count >= p->ms) {
+				p->count=0;
+				if(p->RunMod == interruptRun) {
+					if(p->Function) p->Function();
+				}
+				else if(p->RunMod == normalRun) {
+					p->Flag = ENABLE;
+				}
+			}
+		}
+		p=p->next;
+	}
+}
+
+/*
+	功能：在while中查询函数是否执行
+*/
+void FunctionTickerRun(void)
+{
+	FunctionTicker *p = FunctionTickerPointer;
+	
+	while(p) {
+		if(p->Flag == ENABLE) {
+			p->Flag = DISABLE;
+			if(p->Function) p->Function();
+		}
+		p=p->next;
+	}
+}
+
+
+
+// ****************** 单次运行 ******************
+
+// t=0: dat相等运行一次  t=1：dat2改变运行一次!!!只能被调用一次!!!
+bool tRunOne(TypeRunOne *RunOne, bool t, unsigned int dat1,unsigned int dat2)
+{
+	if(!t) //0: 值为dat运行一次
+	{
+		if(dat1 != dat2)
+		{
+			RunOne->floag = 1;
+		}		
+		if(RunOne->floag==1 && (dat1 == dat2))
+		{
+			RunOne->floag = 0;
+			return 1;
+		}
+	}
+	else //1：dat改变运行一次
+	{
+		if(RunOne->dat != dat2)
+		{
+			RunOne->dat = dat2;
+			return 1;
+		}
+	}
+	return 0;
+}
+
+
+
+
+
 
 
 

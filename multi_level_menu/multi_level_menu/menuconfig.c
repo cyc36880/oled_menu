@@ -4,35 +4,28 @@
 #include "menufontshow.h" //字符函数
 #include "Graphicalfunctions.h" // 图形化函数
 
-uint16_t id = MENUHEARDID;
+void FTRunTest0(void);
+void FTRunTest1(void);
 
+menu_area menutest;
 void test1_1(menu_area *target);
-void always(void);
 
-menu_area menutest0;
-#define arraynum  20 //批量菜单个数
-menu_area menuarray[arraynum];//批量菜单数组
-
+uint8_t count=0;
+uint8_t count1=0;
 
 /*
 	功能：初始化菜单列表 <此函数名不可修改>
 */
 static void MakeMenu(void)
 {
-	TargetMenu = &menutest0;
-	SetMenu(&menutest0, MenuScreenCenterX(32), 0, 32, 16, 1, NULL)->menuinterface = test1_1; //使用以创建好的菜单配置
+	TargetMenu = &menutest;
+	SetMenu(&menutest, MenuScreenCenterX(32), MenuScreenCenterY(16), 32, 16, ENABLE, NULL)->menuinterface = test1_1;
+	AddToSpecialFunction(&menutest, MenuTime, 1000);
 	
-	SetMenu(&menuarray[0], MenuScreenCenterX(32), 0, 32, 16, 1, NULL);
-	BatchFastSimilarMenu(&menuarray[0], &menuarray[0], arraynum, 2, test1_1); //批量菜单初始化
-	LinkToParentClass(&menutest0, &menuarray[0]);
-	
-	AddToSpecialFunction(&menuarray[arraynum-1], EnterMenu, 0); //添加特殊功能
-	
-	MenuOverall(&menuarray[0])->menuinterface = always;
+	AddToFunctionTicker(100, interruptRun, FTRunTest0);
+	AddToFunctionTicker(200, interruptRun, FTRunTest1);
 	
 	
-	
-	MenuHeartTimeStart = ENABLE;//菜单心跳
 }
 
 /*
@@ -41,19 +34,17 @@ static void MakeMenu(void)
 */
 void test1_1(menu_area *target)
 {
-	if(TriggerCheck(target, EnterMenu)) {
-		TargetMenu = FindMenuOfID(TargetMenu, id, 0);
-		return;
-	}
-	MenuShowNum(target, 0, 0, 2, target->id);
+	MenuShowNum(NULL, 0, 0, 0, count);
+	MenuShowNum(NULL, 0, 32, 0, count1);
 }
 
-
-
-void always(void)
+void FTRunTest0(void)
 {
-	id = TargetMenu->id;
-	ScrollingDisplay_Y(TargetMenu, 0, 64, 16, 32);
+	count++;
+}
+void FTRunTest1(void)
+{
+	count1++;
 }
 
 
@@ -61,11 +52,45 @@ void always(void)
 
 
 
-//功能：初始化菜单相关内容
+// ==================================================================
+// ======================== 菜 单 固 定 函 数 =======================
+// ==================================================================
+
+
+
+//**************** while中全速运行  ************************
+
+
+void AlwaysRun(void)
+{
+	
+}
+
+
+
+//*************** 菜单跟随刷新 *********************
+
+
+// 菜单的每次刷新都会执行该函数 执行优先级最高
+void MenuAlwaysRun_PH(void)
+{
+	
+}
+
+// 菜单的每次刷新都会执行该函数 执行优先级最低
+void MenuAlwaysRun_PL(void)
+{
+	
+}
+
+
+//************* 初始化菜单相关内容 *********************
+
 void MenuInit(void)
 {
 	OLED_Init(); // OLED初始化
 	MakeMenu(); //菜单列表初始化
+	MenuHeartTimeStart = ENABLE;//菜单心跳
 }
 
 

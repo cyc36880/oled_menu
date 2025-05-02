@@ -16,6 +16,11 @@ void DrawCircle(int16_t x0,int16_t y0,uint8_t r);
 //实心圆
 void DrawCircle_Solid(int16_t x0,int16_t y0,uint8_t r);
 
+//空心矩形
+void DrawRect(int16_t x, int16_t y, uint16_t w, uint16_t h);
+//实心矩形
+void DrawFillRect(int16_t x, int16_t y, uint16_t w, uint16_t h);
+
 //空心圆角矩形
 void DrawRoundRect(int x, int y, unsigned char w, unsigned char h, unsigned char r);
 //实心圆角矩形
@@ -27,9 +32,11 @@ void PolygonTransformation(int16_t x0,int16_t y0,uint16_t r, uint16_t n);
 //旋转目标点
 void RotateXY(int *xy, int centerX, int centerY, int x, int y, int Angle, char direct);
 
+//线立方体 cx、cy：中心坐标  w、h宽高  rot：以0.1为单位递增即可（弧度制）
+void Linecube(int cx, int cy, int w, int h, double rot);
 
-
-
+//线正方体 centerX、centerY 中心坐标 ， size：边长 ， rotx roty rotz：绕xyz轴的角度（弧度制）
+void DrawCube(int centerX, int centerY, int size, float rotX, float rotY, float rotZ);
 
 //--------  折 线 图 ------------
 

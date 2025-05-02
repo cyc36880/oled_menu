@@ -16,10 +16,14 @@ enum MessageState
 // 消息 
 typedef struct MESSAGE
 {
-	uint16_t message; // 消息内容 
+	uint32_t message; // 消息内容 
 	uint8_t state;    // 状态 
 	struct MESSAGE *next; 
 }MessageTypedef;
+
+
+
+
 
 /*
 	功能：消息初始化
@@ -34,14 +38,48 @@ MessageTypedef * MessageInit(MessageTypedef** Target, MessageTypedef* mes);
 	mes：   消息链表句柄 
 	mesage：要广播的消息 
  **/
-void MessageBroadcast(MessageTypedef *mes, uint16_t mesage);
-
-#define MesHave(p)  (p.state & Mes_Have) //判断 是否有消息
-#define MesClear(p) (p.state &= !Mes_Have) // 清除消息状态
-#define MesRead(p)  (p.message)           //读消息
+void MessageBroadcast(MessageTypedef *mes, uint32_t mesage);
 
 
 extern MessageTypedef *Message_Key; //按键消息广播列表 
+
+
+#define MesHave(p)  ((p).state & Mes_Have) //判断 是否有消息
+#define MesClear(p) ((p).state &= !Mes_Have) // 清除消息状态
+#define MesRead(p)  ((p).message)           //读消息
+
+
+#define MesInit_Key(km) MessageInit(&Message_Key,km)     //按键消息 - 初始化
+#define MesBro_Key(km) MessageBroadcast(Message_Key, km) //按键消息 - 发送
+
+
+
+
+
+//发送缓冲
+//注意：消息缓冲区为空才能写入成功
+void cushMes(uint32_t mesage);
+
+/*
+	功能：若有消息，广播缓冲区的消息，发送成功后，状态自动复位
+	mes：消息的《头句柄》
+	
+	注意：已自动判断，不会重复发送
+*/
+void cushMesBro(MessageTypedef *mes);
+
+/*
+	功能：判断缓冲区是否为空
+	ret：1 空，0不为空
+*/
+uint8_t cushIsNull(void);
+
+// 设置缓冲为空 true 或 false
+void SetCushNull(bool sta);
+
+// 读缓冲区
+uint32_t readCush(void);
+
 
 
 
@@ -54,7 +92,7 @@ extern MessageTypedef *Message_Key; //按键消息广播列表
 
 /*
 	功能：滚动显示
-	target：当前所处的任一菜单指针， 滚动参考为此
+	target：当前所处的任一菜单指针， >> 滚动参考为此 <<
 	showSY：列表允许显示的起始y坐标 头坐标
 	showEY：列表允许显示的结束y坐标 底坐标
 	TarSY： 指针允许的起始y坐标     头坐标 应 >= showSY
@@ -66,7 +104,11 @@ extern MessageTypedef *Message_Key; //按键消息广播列表
 	注意：该函数会改变大量菜单的menulistend属性，在该菜单所在的菜单列表中，对于出入菜单特殊功能，
 		建议使用EnterMenu，ExitMenu。EnterShowMenuList与ExitShowMenuList存在多次触发问题
 */
-uint8_t ScrollingDisplay_X(menu_area *target, int16_t showSX, uint8_t showEX, int16_t TarSX, int16_t TarEX, uint8_t style);
+uint8_t ScrollingDisplay_X(menu_area *target, int16_t showSX, int16_t showEX, int16_t TarSX, int16_t TarEX, uint8_t style);
+
+
+
+
 
 
 // ************** 纵 向 滚 动 *******************
@@ -74,7 +116,7 @@ uint8_t ScrollingDisplay_X(menu_area *target, int16_t showSX, uint8_t showEX, in
 
 /*
 	功能：滚动显示
-	target：当前所处的任一菜单指针， 滚动参考为此
+	target：当前所处的任一菜单指针， >> 滚动参考为此 <<
 	showSY：列表允许显示的起始y坐标 头坐标
 	showEY：列表允许显示的结束y坐标 底坐标
 	TarSY： 指针允许的起始y坐标     头坐标 应 >= showSY
@@ -86,8 +128,7 @@ uint8_t ScrollingDisplay_X(menu_area *target, int16_t showSX, uint8_t showEX, in
 	注意：style=0时 该函数会改变大量菜单的menulistend属性，在该菜单所在的菜单列表中，对于出入菜单特殊功能，
 		建议使用EnterMenu，ExitMenu。EnterShowMenuList与ExitShowMenuList存在多次触发问题
 */
-uint8_t ScrollingDisplay_Y(menu_area *target, int16_t showSY, uint8_t showEY, int16_t TarSY, int16_t TarEY, uint8_t style) ;
-
+uint8_t ScrollingDisplay_Y(menu_area *target, int16_t showSY, int16_t showEY, int16_t TarSY, int16_t TarEY, uint8_t style);
 
 
 
@@ -96,10 +137,11 @@ uint8_t ScrollingDisplay_Y(menu_area *target, int16_t showSY, uint8_t showEY, in
 // *********** 菜 单 堆 叠 与 展 开 ****************
 
 /*
-	功能：菜单堆叠（与显示的头菜单重叠）
+	功能：菜单堆叠（向下）
 	target：句柄
+	mod: 0:与头菜单重叠  1：与当前菜单重叠
 */
-void MenuCoorAlignment(menu_area *target);
+void MenuCoorAlignment(menu_area *target, uint8_t mod);
 
 /*
 	功能：使堆叠的菜单 以头菜单 为目标恢复展开状态
@@ -125,7 +167,7 @@ uint8_t MenuCoorRecovery(menu_area *target, uint8_t mod, uint8_t style);
 	注意：当使用“特殊功能”的EnterMenu来堆叠菜单 （MenuCoorAlignment） 时，此函数应比
 			MenuCoorAlignment执行的优先级低，（如可放入在 MenuAlwaysRun_PM）
 */
-void ListSwitchIns(MessageTypedef *mes, int16_t start, int16_t end, bool dir);
+void ListSwitchIns(MessageTypedef *mes, bool dir, int16_t start, int16_t end);
 
 
 
@@ -148,16 +190,46 @@ typedef struct FUNCTINOTICKER
 	uint32_t count; //计数
 	uint32_t ms;  //目标
 	struct FUNCTINOTICKER *next; //下一个
-	void (*Function)(void); //执行函数
+	void (*Function)(uint32_t d); //执行函数
+	uint32_t parpass; // 传递参数
 	enum FUNCTINOTICKEROPTIONS RunMod; //模式
+	uint8_t NumOfRun; //运行次数 0无限制， >0 有限次数。<默认值 0>
 	bool Flag; //执行标志
-	bool run; //运行 <使能>
+	bool run; //运行 <默认使能>
 }FunctionTicker;
 
-FunctionTicker *SetFunctionTicker(FunctionTicker *FTtarget, uint32_t ms, enum FUNCTINOTICKEROPTIONS RunMod, void (*Function)(void));
+FunctionTicker *SetFunctionTicker(FunctionTicker *FTtarget, uint32_t ms, enum FUNCTINOTICKEROPTIONS RunMod, void (*Function)(uint32_t parpass), uint32_t parpass);
 //功能：函数定时执行
-FunctionTicker *AddToFunctionTicker(uint32_t ms, enum FUNCTINOTICKEROPTIONS RunMod, void (*Function)(void));
+FunctionTicker *AddToFunctionTicker(uint32_t ms, enum FUNCTINOTICKEROPTIONS RunMod, void (*Function)(uint32_t parpass), uint32_t parpass);
 
+
+
+
+
+
+// **************************************
+// *************** 按键 *****************
+// **************************************
+
+typedef struct KEYDISPOSE
+{
+	uint8_t KEYPUTSTA;//按键按下电平 1 - 0
+	uint8_t ReadKey;//处理过后的按键
+	uint16_t keypt;//key put time
+	uint8_t keynpflag; // key n put flag
+	uint8_t keypsc;// key puts count
+	uint8_t keylpt;// key long put time
+	uint8_t keystate;
+	uint8_t keycr; //key can read
+	struct KEYDISPOSE *next;
+}KeyTypedef;
+
+// 按键初始化
+void KeyDisInit(KeyTypedef *key, uint8_t putsta);
+// 按键处理 中断
+void KeyDisposeISR(uint16_t ms);
+// 获取按键状态
+uint8_t GetKeyState(KeyTypedef *key, uint8_t *state, uint8_t *keycount);
 
 
 
@@ -170,20 +242,29 @@ FunctionTicker *AddToFunctionTicker(uint32_t ms, enum FUNCTINOTICKEROPTIONS RunM
 
 typedef struct RUNONE
 {
-	unsigned int dat;
-	unsigned char floag;
+	uint32_t dat;
+	uint8_t floag;
 }TypeRunOne; //需初始化为 {1, 0};
 
 /* t=0: dat相等运行一次  t=1：dat2改变运行一次!!!只能被调用一次!!! */
-bool tRunOne(TypeRunOne *RunOne, bool t, unsigned int dat1,unsigned int dat2);
+bool tRunOne(TypeRunOne *RunOne, bool t, uint32_t dat1,uint32_t dat2);
+
+
+
+
+
 
 
 
 
 // ****** 工 具 **********
 
+
+//内存清零
+void ClearnMemory(void *m, uint16_t size);
+
 // 绝对值
-uint16_t myabs(int16_t dat);
+uint32_t myabs(int32_t dat);
 
 
 

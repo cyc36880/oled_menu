@@ -50,18 +50,20 @@ enum SpecialInformation
 	EnterShowMenuList = 0x08, // 进入显示菜单列表，if末尾建议加return 滚动显示禁用该功能
 	ExitShowMenuList = 0x10, // 退出显示菜单列表，if末尾建议加return  滚动显示禁用该功能
 	
+	NotIgnore = 0x20, //不在显示的范围，任然刷新。可注册，不可检查
+	
 	/*****上述功能的改进*****/
 	
-	MenuTimeForce = 0x20, //！！！时间列表强制执行。 与MenuTime配合使用，否则无效，无需对此判断，if末尾必须加return！！！
+	MenuTimeForce = 0x40, //！！！时间列表强制执行。 与MenuTime配合使用，否则无效，无需对此判断，if末尾必须加return！！！
 	/*
 		↑↑↑ 注册时，不加该标志，则仅当菜单显示时才能正常计数。
 		！！加入该标志，由中断调取相应函数，并且只要处于该菜单所处的列表中，就能正常计数，并调用相应函数
 	*/
 	
 	/******** 其 它 **********/
-	MenuHaveOverall = 0x40,//不可使用，其它功能占用该位。菜单列表全局
-	MenuScrollingY  = 0x80,//不可使用，其它功能占用该位。菜单列表Y滚动
-	MenuScrollingX  = 0x100,//不可使用，其它功能占用该位。菜单列表X滚动
+	MenuHaveOverall = 0x80,//不可使用，其它功能占用该位。菜单列表全局
+	MenuScrollingY  = 0x100,//不可使用，其它功能占用该位。菜单列表Y滚动
+	MenuScrollingX  = 0x200,//不可使用，其它功能占用该位。菜单列表X滚动
 };
 
 
@@ -95,7 +97,7 @@ typedef struct MENU_AREA
 }menu_area;
 
 
-typedef struct MENUTARGET //菜单指针
+typedef struct MENUTARGET //菜单指示器
 {
 	menu_area * TargetMenuP;
 	menu_area * LastTargetMenuP;
@@ -103,7 +105,7 @@ typedef struct MENUTARGET //菜单指针
 	int16_t y;
 	uint16_t width;
 	uint16_t high;
-	uint8_t R;
+	uint8_t R;  //圆角
 	bool style; //动画
  	bool show;  //显示
 }MenuTargetTypedef;
@@ -186,6 +188,9 @@ void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms);
 bool TriggerCheck(menu_area *target, enum SpecialInformation function);
 
 
+//功能：手动指定要改变的菜单，并广播消息 target：指定的菜单指针 mes：消息
+void gotoMenu(menu_area *target, enum MenuState mes);
+
 
 
 
@@ -199,7 +204,9 @@ extern uint8_t InuptEnable; //输入使能
 extern uint8_t ResponseEnable; //菜单切换响应
 
 
-extern uint32_t MenuMallocSize;//菜单申请的空间大小
+
+
+
 
 /*
 * 输入要显示占用的高度（high）或宽度（width），输出左上角的x或y相对于
@@ -213,7 +220,16 @@ extern uint32_t MenuMallocSize;//菜单申请的空间大小
 void MenuAlwaysRun_PH(void);
 void MenuAlwaysRun_PM(void);
 void MenuAlwaysRun_PL(void);
+void MenuSysBaseInit(void); //菜单系统初始化
 void AlwaysRun(void);
+
+
+
+
+
+
+
+
 
 // =========================== 屏 幕 ====================================
 
@@ -232,7 +248,8 @@ enum ScreenShowManner //屏幕显示方式
 enum GraphicsShowManner //图形显示方式
 {
 	GraphicsNormal,  //正常
-	GraphicsCover, //覆盖
+	GraphicsColless, //无色
+	GraphicsCover,   //覆盖
 	GraphicsRollColor //反色（读取目标点，取反）
 };
 
@@ -250,12 +267,21 @@ extern enum GraphicsShowManner GRAPHICSSHOWMANNER;//图形显示方式
 extern unsigned char DisplayBuff[]; // 屏幕显示缓存
 extern TypedefScreen ScreenPara; // 屏幕具体参数
 
-//功能：屏幕多次刷新注册  mod > 0：依附于本有的刷新次数，无则创建  1：创建刷新
-void MenuRefresh(bool mod);
+//功能：屏幕多次刷新注册  mod  0：依附于本有的刷新次数，无则创建  其它：创建N次刷新
+void MenuRefresh(uint32_t mod);
 // 功能：在目标菜单的相对位置画点
 void MenuSetPoint(menu_area *target, int16_t x, int16_t y, bool w_b); 
 //清空显示缓存
 void ClearnBuff(void);
+
+
+/*
+	功能：判断菜单是否在屏幕上
+
+	ret：0不在 1在
+*/
+uint8_t inScreen(menu_area *target);
+
 
 /*
 * 输入要显示占用的高度（high）或宽度（width），输出左上角的x或y相对于
@@ -272,6 +298,7 @@ void ClearnBuff(void);
 
 // ============================== 其 它 ==================================
 
+
 /*
 	功能：菜单申请空间
 	size：申请空间的字节数
@@ -279,13 +306,15 @@ void ClearnBuff(void);
 */
 void *MenuMalloc(uint16_t size);
 
+extern uint32_t MenuMallocSize;//菜单申请的空间大小
+
 
 // 功能：菜单运行函数，为保证正常运行，该函数在while中每秒循环次数应大于2000次
 void MenuRun(void); 
 // 功能：菜单心跳执行，每1ms执行该函数
 //ms 间隔几毫秒
 void MenuTicker_ms(uint16_t ms);
-//菜单心跳开始标志 放在最后 置1运行
+//菜单心跳开始标志 放在最后 置ENABLE运行
 extern bool MenuHeartTimeStart; 
 
 

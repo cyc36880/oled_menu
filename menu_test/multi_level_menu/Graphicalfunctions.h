@@ -2,7 +2,7 @@
 #define _Graphicalfunctions_h_
 
 #include "menu.h"
-
+#include "menu_tool.h" //工具
 
 // 画点
 void write_point(int16_t x, int16_t y, uint8_t w_d);
@@ -39,10 +39,12 @@ void Linecube(int cx, int cy, int w, int h, double rot);
 //线正方体 centerX、centerY 中心坐标 ， size：边长 ， rotx roty rotz：绕xyz轴的角度（弧度制）
 void DrawCube(int centerX, int centerY, int size, float rotX, float rotY, float rotZ);
 
-//--------  折 线 图 ------------
 
-//内存清零
-void ClearnMemory(void *m, uint16_t size);
+
+
+
+//------------------  折 线 图 -------------------------
+
 
 
 typedef struct LineChartMap
@@ -69,7 +71,9 @@ int16_t *LineChart(TypLineChartMap *t, int16_t x, int16_t y);
 
 
 
+
 // ---------------- 图 片 -------------------
+
 
 /*
 	功能：图片显示
@@ -84,7 +88,18 @@ void PictureShow(menu_area *target, const uint8_t *psize, const uint8_t *p, int1
 */
 void FastDrawPic2(const uint8_t *psize, const uint8_t *p, int16_t x, int16_t y);
 
-// ---------- 进度条 ------------
+
+
+
+
+
+// -------------------- 进 度 条 -----------------------
+
+enum PROGRESSBAR_ATTR
+{
+	hideframe     = 0x01,  //隐藏边框
+	hideindicator = 0x02,  //隐藏指示器
+};
 
 typedef struct  PROGRESSBAR
 {
@@ -93,6 +108,7 @@ typedef struct  PROGRESSBAR
 	uint8_t width;     //宽度
 	uint8_t high;       //高度
 	uint8_t R;          //圆角
+	uint8_t attribute;  //属性
 	bool animation;     //动画
 	uint8_t direction;  //方向 0-3
 	
@@ -101,12 +117,13 @@ typedef struct  PROGRESSBAR
 /*
 	功能：进度条初始化
 	barobj : 句柄
+	direction : 0-3， 显示方向，顺时针旋转
 	weight : 宽度，正视屏幕
 	high   : 高度，正视屏幕
 	maxVal : 进度条满时最大值
-	direction : 0-3， 显示方向，顺时针旋转
+	
 */ 
-ProgressBarTypedef * ProgressBarInit(ProgressBarTypedef *barobj, uint8_t width, uint8_t high, uint16_t maxVal, uint16_t direction);
+ProgressBarTypedef * ProgressBarInit(ProgressBarTypedef *barobj, uint8_t direction, uint8_t width, uint8_t high, uint16_t maxVal);
 /*
 	功能：进度条显示
 	barobj：句柄
@@ -119,6 +136,40 @@ ProgressBarTypedef * ProgressBarInit(ProgressBarTypedef *barobj, uint8_t width, 
 	注意：默认无动效，需自主使能 animation ，并定时调用
 */
 int16_t * ProgressBar(ProgressBarTypedef *barobj, int16_t x, int16_t y, uint16_t Val);
+
+//进度条属性设置
+void SetProBarAttibute(ProgressBarTypedef *barobj, uint8_t attibute);
+
+//进度条属性复位
+void ResProBarAttibute(ProgressBarTypedef *barobj, uint8_t attibute);
+
+
+
+
+
+
+// ----------------- 模 糊 --------------------- 
+
+
+/*
+	功能：oled界面模糊
+	n: 0-4  0不模糊 >=4类似清屏
+*/
+void InterfaceBlurry(uint8_t n);
+
+/*
+	功能：菜单进入、离开虚化
+	state: 0 菜单截停  1 菜单虚化
+	
+	ret：1 开始虚化（处于当前菜单）  0 开始实化（处于切换后的菜单）
+
+	注意： ...
+				触发虚化时 输入响应 被禁止，内部主动改变指针时，请先判断是否能 输入响应，
+				再改变菜单指针
+				state=0 时，函数应放在   MenuAlwaysRun_PH 函数最开始处，
+				state=1 时，函数尽量放在 MenuAlwaysRun_PL 函数结束处
+*/
+uint8_t MenuDynamicBlurry(uint8_t state);
 
 #endif
 

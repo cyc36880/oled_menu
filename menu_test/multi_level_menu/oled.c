@@ -71,6 +71,7 @@ void disp_flush(void)
 	OLED_DC_Set();
 //	OLED_CS_Clr();
 	HAL_SPI_Transmit_DMA(&hspi1, DisplayBuff, SCREENWIDTH*ScreenPara.screenhigh); // 硬件 DMA SPI
+//	HAL_SPI_Transmit(&hspi1, DisplayBuff, SCREENWIDTH*ScreenPara.screenhigh, HAL_MAX_DELAY); //无DMA，可避免刷新过快时的屏幕异常闪烁
 }
 
 

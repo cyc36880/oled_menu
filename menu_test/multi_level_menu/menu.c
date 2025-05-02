@@ -14,9 +14,11 @@
 
 void FunctionTickerRun(void); //在while中查询函数是否执行
 void FunctionTickerRunIRQ(uint16_t ms); //在中断中查询函数是否该执行
+// 输入禁止时
+static void StopKeyReceive(uint8_t *p);
 
-
-
+static KeyTypedef MenuKey; //按键 多击与长按
+static enum MenuState MesSIF = Menu_noaction; //用于消息，记录输入状态
 
 // ================================= 设 备 ========================================
 
@@ -60,44 +62,54 @@ static enum MenuState Scan(void)
 	return adcstate;
 }
 
+/*
+	按键状态获取与简单的处理
+	函数中的 return 1 会注册刷新， 在无定时刷新时有效，定时刷新无明显效果
+*/
 
-#if SCAN_MOD
 static bool KeyState(enum MenuState *k)
 {
-	static enum MenuState KeySt = Menu_noaction;
+	uint8_t keystate=0;
+	uint8_t keycount=0;
 	
+	static enum MenuState KeySt = Menu_noaction;
+	// 通用按键处理
 	if(KeySt != Scan())
 	{
 		HAL_Delay(1);
 		if(KeySt != Scan())
 		{
-			*k = KeySt;
-			KeySt = Scan();
-			StatusInformationAlways = KeySt;
+			#if SCAN_MOD
+				*k = KeySt;
+				KeySt = Scan();
+				StatusInformationAlways = KeySt;
+			#else
+				KeySt = Scan();
+				*k = KeySt;
+				StatusInformationAlways = KeySt;
+			#endif
 			return 1;
 		}
 	}
-	return 0;
-}
-#else
-static bool KeyState(enum MenuState *k)
-{
-	static enum MenuState KeySt = Menu_noaction;
+	// 按键附加功能处理 -- 多击与长按
+	if(StatusInformationAlways >= Menu_up && StatusInformationAlways <= Menu_Father) 
+		MenuKey.ReadKey = 1;
+	else 
+		MenuKey.ReadKey = 0;
 	
-	if(KeySt != Scan())
+	if(GetKeyState(&MenuKey, &keystate, &keycount ))
 	{
-		HAL_Delay(1);
-		if(KeySt != Scan())
-		{
-			KeySt = Scan();
-			*k = KeySt;
-			StatusInformationAlways = KeySt;
-			return 1;
+		if(keystate == 1) { //多击 keycount为多击后的次数
 		}
+		if(keystate == 2) { //长按
+			*k = StatusInformationAlways;
+		}
+		return 1;
 	}
+	
 	return 0;
 }
-#endif
+
 
 /*
 	功能：输入设备扫描，该函数仅由系统调用
@@ -105,13 +117,12 @@ static bool KeyState(enum MenuState *k)
 static void EquipmentState(void)
 {
 	if(InuptEnable == DISABLE) { //输入是否使能
-		StatusInformationAlways = Menu_noaction;
-		StatusInformation = Menu_noaction;
+		StopKeyReceive(&InuptEnable);
 		return;
 	}
 	if(KeyState(&StatusInformation)){ //按键扫描
 		if(StatusInformation != Menu_noaction){ //非空闲
-			MenuRefresh(0); //屏幕刷新
+			//MenuRefresh(0); //屏幕刷新
 		}
 	}
 }
@@ -140,9 +151,9 @@ void ClearnBuff(void)
 }
 /*
 	功能：屏幕多次刷新注册
-	mod：  0：依附于本有的刷新次数，无则创建  1：创建刷新
+	mod：  0：依附于本有的刷新次数，无则创建  其它：创建N次刷新
 */
-void MenuRefresh(bool mod)
+void MenuRefresh(uint32_t mod)
 {
 	if(mod==0) {
 		if(ScreenPara.refresh == 0) {
@@ -150,9 +161,28 @@ void MenuRefresh(bool mod)
 		}
 	}
 	else {
-		ScreenPara.refresh += 1;
+		ScreenPara.refresh += mod;
 	}
 }
+
+/*
+	功能：判断菜单是否在屏幕上
+
+	ret：0不在 1在
+*/
+uint8_t inScreen(menu_area *target)
+{
+	if(target->x>=SCREENWIDTH || target->y>=SCREENHIGH)
+	{
+		return 0;
+	}
+	else if( (target->x+target->width-1)<0 || (target->y+target->high-1)<0 )
+	{
+		return 0;
+	}
+	return 1;
+}
+
 
 // ========================== 菜 单 ==================================
 
@@ -469,7 +499,7 @@ menu_area *NextCancheMenuList(menu_area *target, int16_t num)
 	{
 		p=MenuListAddressing(p, num<0, 1);
 		if(p==NULL || p==target) return target;
-		if(p->checked == 1) i++;
+		if(p->checked == ENABLE) i++;
 	}
 	
 	return p;
@@ -624,6 +654,38 @@ void MakeMenuListRing(menu_area *target)
 }
 
 
+static menu_area *menuChange = NULL;
+static enum MenuState menuChangemes = Menu_noaction;
+static uint8_t menuChangeFlag = 0;
+
+/*
+	功能：执行手动改变的菜单指针，并向按键广播消息
+*/
+static void changeMenu(void)
+{
+	if(menuChangeFlag==1)
+	{
+		TargetMenuPointrt.TargetMenuP = menuChange;
+		menuChange = NULL;
+		cushMes(menuChangemes);
+		menuChangemes = Menu_noaction;
+		menuChangeFlag=2;
+	}
+}
+/*
+	功能：手动指定要改变的菜单，并广播消息
+	target：指定的菜单指针
+	mes：消息
+*/
+void gotoMenu(menu_area *target, enum MenuState mes)
+{
+	if(menuChangeFlag==0)
+	{
+		menuChange = target;
+		menuChangemes = mes;
+		menuChangeFlag = 1;
+	}
+}
 
 
 
@@ -828,14 +890,18 @@ static void DrawMenuRectangle(MenuTargetTypedef *MenuPointer)
 		}
 
 		if(width != target->width) {
-			if( myabs(target->width - width) > 3) 
+			if( myabs(target->width - width) > 6) 
+				width += target->width - width > 0 ? 6:-6;
+			else if( myabs(target->width - width) > 3) 
 				width += target->width - width > 0 ? 3:-3;
 			else
 				width += target->width - width > 0 ? 1:-1;
 		}
 
 		if(high != target->high) {
-			if( myabs(target->high - high )> 3) 
+			if( myabs(target->high - high )> 6) 
+				high += target->high - high > 0 ? 6:-6;
+			else if( myabs(target->high - high )> 3) 
 				high += target->high - high > 0 ? 3:-3;
 			else
 				high += target->high - high > 0 ? 1:-1;
@@ -1011,6 +1077,7 @@ void MenuTicker_ms(uint16_t ms)
 	
 	MenuHeartTime(ms);
 	FunctionTickerRunIRQ(ms);
+	KeyDisposeISR(ms);
 }
 
 
@@ -1027,7 +1094,7 @@ static void MenuListInterface(menu_area *target)
 	
 	for( ; ; )
 	{
-		if(p->menuinterface){
+		if( (inScreen(p) || p->specialfeatures&NotIgnore) && p->menuinterface){
 			p->menuinterface(p);
 		}
 		
@@ -1160,44 +1227,81 @@ static void StateToPointer(void)
 	#if !MENU_FATHER
 		menu_area *p = NULL;
 	#endif
-	enum MenuState MesSIF = StatusInformation; //用于消息，记录输入状态
 
-	if(ResponseEnable == DISABLE) return;
+	if(TargetMenuPointrt.LastTargetMenuP != TargetMenuPointrt.TargetMenuP)
+		menuChangeFlag=0;
 	
-	TargetMenuPointrt.LastTargetMenuP = TargetMenu;
+	TargetMenuPointrt.LastTargetMenuP = TargetMenuPointrt.TargetMenuP;
+	
+	if(ResponseEnable == DISABLE) 
+	{
+		StopKeyReceive(&ResponseEnable);
+		return;
+	}
 
+	MesSIF = StatusInformation; //按键状态记录 到 消息
+	
 	switch(StatusInformation)
 	{
-		case Menu_up: 		TargetMenu=NextCancheMenuList(TargetMenu, -1);break;
-		case Menu_down: 	TargetMenu=NextCancheMenuList(TargetMenu,  1);break;
+		case Menu_up: 		TargetMenuPointrt.TargetMenuP=NextCancheMenuList(TargetMenuPointrt.TargetMenuP, -1);break;
+		case Menu_down: 	TargetMenuPointrt.TargetMenuP=NextCancheMenuList(TargetMenuPointrt.TargetMenuP,  1);break;
 		case Menu_Sub:  
-			if(TargetMenu->subclass != NULL && TargetMenu->subclass->checked==ENABLE) {
+			if(TargetMenuPointrt.TargetMenuP->subclass != NULL && TargetMenuPointrt.TargetMenuP->subclass->checked==ENABLE) {
 				StatusInformation = Menu_noaction; // 防止切换菜单列表时立即运行函数内部指令
-				TargetMenu = TargetMenu->subclass;
+		  	TargetMenuPointrt.TargetMenuP = TargetMenuPointrt.TargetMenuP->subclass;
 			}
 			break;
 		case Menu_Father:  
 			// 0: 返回至菜单头的父类   1: 返回至当前菜单的父类
 			#if MENU_FATHER
-				if(TargetMenu->father != NULL && TargetMenu->father->checked==ENABLE) {
+				if(TargetMenuPointrt.TargetMenuP->father != NULL && TargetMenuPointrt.TargetMenuP->father->checked==ENABLE) {
 					StatusInformation = Menu_noaction; // 防止切换菜单列表时立即运行函数内部指令
-					TargetMenu = TargetMenu->father;
+					TargetMenuPointrt.TargetMenuP = TargetMenu->father;
 				}
 			#else
-				p = FindMeunListHeard(TargetMenu);
+				p = FindMeunListHeard(TargetMenuPointrt.TargetMenuP);
 				if(p->father != NULL && p->father->checked==ENABLE) {
 					StatusInformation = Menu_noaction; // 防止切换菜单列表时立即运行函数内部指令
-					TargetMenu = p->father;
+					TargetMenuPointrt.TargetMenuP = p->father;
 				}
 			#endif
 			break;
 		default:break;
 	}
-	if(TargetMenuPointrt.LastTargetMenuP != TargetMenu) //按键消息广播
+}
+
+// 输入禁止时
+static void StopKeyReceive(uint8_t *p)
+{
+	MesSIF = Menu_noaction; //防止禁止时错误的按键状态被广播
+	
+	if(p == &InuptEnable) //禁止按键输入
 	{
-		MessageBroadcast(Message_Key, MesSIF);
+		StatusInformationAlways = Menu_noaction;
+		StatusInformation = Menu_noaction;
+	}
+	else if(p == &ResponseEnable) //按键不响应
+	{
+		
 	}
 }
+
+// 运行
+static void MenuAlwaysRun_PVH(void)
+{
+	changeMenu(); //手动改变菜单
+	
+	if(TargetMenuPointrt.LastTargetMenuP != TargetMenu) //按键消息广播
+	{
+		cushMes(MesSIF); //向缓冲区写消息
+	}
+}
+static void MenuAlwaysRun_PLH(void) // 
+{
+	cushMesBro(Message_Key); //广播缓冲区的消息
+}
+
+
 
 
 /*
@@ -1211,6 +1315,21 @@ static void MenuCheckedStyle(MenuTargetTypedef *MenuPointer)
 		DrawMenuRectangle(MenuPointer); // 用户菜单选中
 		GRAPHICSSHOWMANNER = GraphicsNormal;
 	}
+}
+
+//菜单系统初始化
+void MenuSysBaseInit(void) 
+{
+	// 指示器初始化
+	TargetMenuPointrt.style = DISABLE; //不使能指针动效
+	TargetMenuPointrt.show = ENABLE;  //指针显示
+
+	// OLED
+	OLED_Init(); // OLED初始化
+	
+	// 输入设备
+	KeyDisInit(&MenuKey, 1); // 按键长按初始化
+	
 }
 
 /*
@@ -1231,7 +1350,9 @@ void MenuRun(void)
 		StateToPointer(); // 设备输入状态改变实时目标菜单指针
 		
 		ClearnBuff(); // 清空缓存
+		MenuAlwaysRun_PVH();
 		MenuAlwaysRun_PH();
+		MenuAlwaysRun_PLH();
 		SpecialFunctionRun(TargetMenu); //特殊功能运行
 		MenuAlwaysRun_PM();
 		MenuListOverallRun(TargetMenu); //菜单全局

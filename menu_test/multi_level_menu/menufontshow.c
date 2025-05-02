@@ -35,23 +35,43 @@ static void MenuShowAsc(menu_area *target,int16_t x, int16_t y, uint8_t asc)
 	if(asc > '~' || asc < ' ') asc = ' '; //不在显示范围
 	c=asc-' ';   // ' '=32,ASCII码表
 	
+	
 	if(target == NULL) 
 	{
 		FastDrawPic2(font_SizeInf, font + c*wight*DIVIDEUP(high), x, y);
 	}
-	else 
+	else
 	{
-		for(h=0; h<high; h++)//字高
+		if( (x+font_SizeInf[0]-1)<0 || (y+font_SizeInf[1]-1)<0 || x>=target->width || y>=target->high) //不在显示区域
+			return;
+		
+		if( x>=0 && y>=0 && (x+font_SizeInf[0]-1)<target->width && (y+font_SizeInf[1]-1)<target->high)
 		{
-			for(w=0; w<wight; w++) //字宽
+			FastDrawPic2(font_SizeInf, font + c*wight*DIVIDEUP(high), target->x + x, target->y + y);
+		}
+		else
+		{
+			int16_t start_x, start_y;
+			int16_t end_x, end_y;
+			
+			start_x = x < 0 ? -x : 0;
+			start_y = y < 0 ? -y : 0;
+			
+			end_x = (x+wight-1)<target->width ? wight : target->width - x;
+			end_y = (y+high-1)<target->high ? high :target->high - y;
+			
+			for(h=start_y; h<end_y; h++)//字高
 			{
-				w_b = ( font[c*wight*DIVIDEUP(high) + w+wight*(h/8)] >> (h%8) ) & 1;
-				if(w_b) {
-					MenuSetPoint(target, w+x, h+y, 1);
-				}
-				else { //覆盖显示
-					if(GRAPHICSSHOWMANNER == GraphicsCover) {
-						MenuSetPoint(target, w+x, h+y, 0);
+				for(w=start_x; w<end_x; w++) //字宽
+				{
+					w_b = ( font[c*wight*DIVIDEUP(high) + w+wight*(h/8)] >> (h%8) ) & 1;
+					if(w_b) {
+						MenuSetPoint(target, w+x, h+y, 1);
+					}
+					else { //覆盖显示
+						if(GRAPHICSSHOWMANNER == GraphicsCover) {
+							MenuSetPoint(target, w+x, h+y, 0);
+						}
 					}
 				}
 			}
@@ -75,11 +95,15 @@ static uint32_t oled_pow(uint8_t m,uint8_t n)
 	len：数字长度 0自动
 	num：数字
 */
-void MenuShowNum(menu_area *target, int16_t x, int16_t y, uint8_t len, uint32_t num)
-{         	
+FontInfoType * MenuShowNum(menu_area *target, int16_t x, int16_t y, uint8_t len, uint32_t num)
+{     
+	static FontInfoType fontinfo;
+		
 	uint8_t t,temp;
 	uint8_t enshow=0;	
 	uint32_t nump = num;
+	
+	ClearnMemory(&fontinfo, sizeof(FontInfoType)); //清空
 	
 	if(len == 0) { //len=0 , 自动计算长度
 		if(nump == 0) {
@@ -90,6 +114,8 @@ void MenuShowNum(menu_area *target, int16_t x, int16_t y, uint8_t len, uint32_t 
 			nump/=10;
 		}
 	}
+	
+	fontinfo.ascnum = len; //信息更新
 	
 	for(t=0;t<len;t++)
 	{
@@ -104,7 +130,12 @@ void MenuShowNum(menu_area *target, int16_t x, int16_t y, uint8_t len, uint32_t 
 		}
 		MenuShowAsc(target, x+font_SizeInf[0]*t, y, temp+'0');
 	}
-} 
+	
+	fontinfo.ascsize[0] = font_SizeInf[0];
+	fontinfo.ascsize[1] = font_SizeInf[1];
+	fontinfo.maxPix = fontinfo.ascnum * fontinfo.ascsize[0];
+	return &fontinfo;
+}
 
 /*
 	功能：在菜单中写Asc字符串，target为NULL在屏幕写
@@ -114,14 +145,25 @@ void MenuShowNum(menu_area *target, int16_t x, int16_t y, uint8_t len, uint32_t 
 	x,y：在目标菜单的相对偏移
 	str：一个ASCII字符串
 */
-static void MenuShowAscStr(menu_area *target, int16_t x, int16_t y, const uint8_t *str)
+FontInfoType* MenuShowAscStr(menu_area *target, int16_t x, int16_t y, const uint8_t *str)
 {
+	static FontInfoType fontinfo;
+	
+	ClearnMemory(&fontinfo, sizeof(FontInfoType));
+	
 	while(*str != '\0')
 	{
 		MenuShowAsc(target, x, y, *str);
 		str++;
 		x+=font_SizeInf[0];
+		fontinfo.ascnum++;
 	}
+	
+	fontinfo.ascsize[0] = font_SizeInf[0];
+	fontinfo.ascsize[1] = font_SizeInf[1];
+	fontinfo.maxPix = fontinfo.ascnum * fontinfo.ascsize[0];
+	
+	return &fontinfo;
 }
 
 
@@ -136,38 +178,60 @@ str：显示的数据串
 注意：数据\n为回车，其它未识别数据显示为空格，不支持中文显示！！
 */
 
-void CharacterText(menu_area *target, int16_t x, int16_t y, uint16_t ascw, const uint8_t *str)
+FontInfoType* CharacterText(menu_area *target, int16_t x, int16_t y, uint16_t ascw, const uint8_t *str)
 {
-	uint8_t showbuf[2] = {0, 0};
+	static FontInfoType fontinfo;
+	uint16_t maxPix = 0;
+	
+	uint8_t showbuf;
 	uint16_t strnum = 0;
 	uint16_t showx=0, showy=0;
 	const uint8_t *s = str;
 	uint16_t num = 0;
+	
+	ClearnMemory(&fontinfo, sizeof(FontInfoType));
 	
 	while(*s++) {
 		num++;
 	}
 
 	if(ascw == 0) {
-		ascw = -1;
+		ascw = 65535;
 	}
 	
 	while(num)
 	{
 		num--;
-		showbuf[0] = str[strnum++];
-		if(showbuf[0] == '\n') {
+		showbuf = str[strnum++];
+		if(showbuf == '\n') {
 			showx = 0;
 			showy++;
+			
+			fontinfo.LBnum++;//字符数据更新
+			if(maxPix >fontinfo.maxPix ) fontinfo.maxPix = maxPix;
+			maxPix = 0;
+			
 			continue;
 		}
-		MenuShowAscStr(target,  x + showx*font_SizeInf[0],  y + showy*font_SizeInf[1], showbuf);
-		
+		MenuShowAsc(target,x + showx*font_SizeInf[0],  y + showy*font_SizeInf[1], showbuf);
+
 		if(++showx >= ascw) {
 			showx = 0;
 			showy++;
+			
+			fontinfo.LBnum++;//字符数据更新
+			if(maxPix >fontinfo.maxPix ) fontinfo.maxPix = maxPix;
+			maxPix = 0;
+			
 		}
+		fontinfo.ascnum++;
+		maxPix+=font_SizeInf[0];
 	}
+	
+	fontinfo.ascsize[0] = font_SizeInf[0];
+	fontinfo.ascsize[1] = font_SizeInf[1];
+	if(maxPix >fontinfo.maxPix ) fontinfo.maxPix = maxPix;
+	return &fontinfo;
 }
 
 
@@ -332,16 +396,32 @@ static void MenuHZ16x16(menu_area *target, int16_t x, int16_t y, uint8_t *s_dat)
 	}
 	else
 	{
-		for(j=0; j<16; j++) //高度
+		if( x>=0 && y>=0 && (x+16-1)<target->width && (y+16-1)<target->high)
 		{
-			for(i=0; i<16; i++) //宽度
+			FastDrawPic2(psize, (const uint8_t *)HZK16x16[(j0-1)*2], target->x+x, target->y+y);
+		}
+		else
+		{
+			int16_t start_x, start_y;
+			int16_t end_x, end_y;
+			
+			start_x = x < 0 ? -x : 0;
+			start_y = y < 0 ? -y : 0;
+			
+			end_x = (x+16-1)<target->width ? 16 : target->width - x;
+			end_y = (y+16-1)<target->high ? 16 :target->high - y;
+			
+			for(j=start_y; j<end_y; j++) //高度
 			{
-				if((HZK16x16[(j0-1)*2 + j/8][i]) & (0x01<<(j%8))){
-					MenuSetPoint(target,x+i, y+j, 1);
-				}
-				else {
-					if(GRAPHICSSHOWMANNER == GraphicsCover) {
-						MenuSetPoint(target,x+i, y+j, 0);
+				for(i=start_x; i<end_x; i++) //宽度
+				{
+					if((HZK16x16[(j0-1)*2 + j/8][i]) & (0x01<<(j%8))){
+						MenuSetPoint(target,x+i, y+j, 1);
+					}
+					else {
+						if(GRAPHICSSHOWMANNER == GraphicsCover) {
+							MenuSetPoint(target,x+i, y+j, 0);
+						}
 					}
 				}
 			}
@@ -350,12 +430,16 @@ static void MenuHZ16x16(menu_area *target, int16_t x, int16_t y, uint8_t *s_dat)
 }
 
 // 汉字 Asc 混合显示，target为NULL在屏幕写
-void MenuHzAndAsc(menu_area *target, int16_t x, int16_t y, const uint8_t *s_dat)
+FontInfoType* MenuHzAndAsc(menu_area *target, int16_t x, int16_t y, const uint8_t *s_dat)
 {
+	static FontInfoType fontinfo;	
+	
 	unsigned int s_datlen = mystrlen(s_dat);
 	unsigned int i=0;
 	unsigned char HZShowBuf[] = {0,0,0}; // 必须三位，以0结尾
 	uint8_t offset = font_SizeInf[1] < 16 ? 0 : font_SizeInf[1] - 16; //上下偏移量
+	
+	ClearnMemory(&fontinfo, sizeof(FontInfoType)); //清空
 	
 	for(i=0; i<s_datlen; )
 	{
@@ -366,14 +450,23 @@ void MenuHzAndAsc(menu_area *target, int16_t x, int16_t y, const uint8_t *s_dat)
 			MenuHZ16x16(target, x, y + offset, HZShowBuf);
 			x+=16; // 坐标右移 由汉字宽度决定
 			i+=2;  // 字符串位置标志右移，汉字固定为2
+			fontinfo.hznum++;
 		}
 		else   //Asc 
 		{
 			MenuShowAsc(target, x, y + offset + (16 - font_SizeInf[1]), s_dat[i]);
 			x+=font_SizeInf[0]; //坐标右移 由Asc宽度决定
 			i++;  //字符串位置标志右移，Asc固定为1
+			fontinfo.ascnum++;
 		}
 	}
+	
+	fontinfo.ascsize[0] = font_SizeInf[0];
+	fontinfo.ascsize[1] = font_SizeInf[1];
+	fontinfo.hzsize[0] = 16;
+	fontinfo.hzsize[1] = 16;
+	fontinfo.maxPix = fontinfo.hznum*fontinfo.hzsize[0] + fontinfo.ascnum*fontinfo.ascsize[0];
+	return &fontinfo;
 }
 
 /*
@@ -382,12 +475,15 @@ void MenuHzAndAsc(menu_area *target, int16_t x, int16_t y, const uint8_t *s_dat)
 target：菜单指针
 x：文本的左上角x坐标
 y：文本的左上角y坐标
-ascw：显示宽度 
+ascw：显示宽度 <像素>
 str：显示的数据串
 注意：数据\n为回车，其它未识别数据显示为空格，行间隔以最大的字体高度执行！！
 */
-void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint16_t ascw, const uint8_t *str)
+FontInfoType* CharacterTextC(menu_area *target, int16_t x, int16_t y, uint16_t ascw, const uint8_t *str)
 {
+	static FontInfoType fontinfo;	
+	uint16_t maxPix = 0;
+	
 	uint8_t showbuf[3] = {0, 0, 0};
 	uint16_t strnum = 0;
 	uint16_t showx=0, showy=0;
@@ -395,12 +491,14 @@ void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint16_t ascw, cons
 	uint8_t offset = font_SizeInf[1] < 16 ? 16 : font_SizeInf[1]; //文本上下偏移量
 	uint16_t num = 0;
 	
+	ClearnMemory(&fontinfo, sizeof(FontInfoType)); //清空
+	
 	while(*s++) {
 		num++;
 	}
 
 	if(ascw == 0) {
-		ascw = -1;
+		ascw = 65535;
 	}
 	
 	while(num)
@@ -411,6 +509,7 @@ void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint16_t ascw, cons
 			showbuf[1] = str[strnum + 1];
 			strnum += 2;
 			num--;
+			fontinfo.hznum++;
 		}
 		else {
 			strnum += 1;
@@ -418,6 +517,11 @@ void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint16_t ascw, cons
 		if(showbuf[0] == '\n') {
 			showx = 0;
 			showy++;
+			
+			fontinfo.LBnum++;
+			if(maxPix > fontinfo.maxPix) fontinfo.maxPix = maxPix;
+			maxPix=0;
+			
 			continue;
 		}
 		
@@ -425,16 +529,34 @@ void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint16_t ascw, cons
 			MenuHZ16x16(target,  x + showx,  y + showy*offset, showbuf);
 			showbuf[1] = 0;
 			showx += 16;
+			
+			maxPix+=16;
 		}
 		else { //英文显示
 			MenuShowAscStr(target, x + showx, y + showy*offset + (16 - font_SizeInf[1]), showbuf);
 			showx += font_SizeInf[0];
+			
+			fontinfo.ascnum++;
+			maxPix+=font_SizeInf[0];
 		}
 		if(showx >= ascw) { //宽度超出
 			showx = 0;
 			showy++;
+			
+			fontinfo.LBnum++;
+			if(maxPix > fontinfo.maxPix) fontinfo.maxPix = maxPix;
+			maxPix=0;
+			
 		}
 	}
+	
+	fontinfo.ascsize[0] = font_SizeInf[0];
+	fontinfo.ascsize[1] = font_SizeInf[1];
+	fontinfo.hzsize[0] = 16;
+	fontinfo.hzsize[1] = 16;
+	if(maxPix > fontinfo.maxPix) fontinfo.maxPix = maxPix;
+	
+	return &fontinfo;
 }
 
 /*
@@ -448,21 +570,68 @@ void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint16_t ascw, cons
 	注意：内部申请固定内存100字节，不要输出太长字符串
 */
 
-uint16_t m_printf(menu_area *target, uint8_t mod, int16_t x, int16_t y, const char *format, ...)
+FontInfoType* m_printf(menu_area *target, uint8_t mod, int16_t x, int16_t y, const char *format, ...)
 {
 	static uint8_t PRINTF_BUFF[100];
-	uint32_t length;
 	va_list args;
 
 	va_start(args, format);
-	length = vsnprintf((char *)PRINTF_BUFF, sizeof(PRINTF_BUFF), (char *)format, args);
+	vsnprintf((char *)PRINTF_BUFF, sizeof(PRINTF_BUFF), (char *)format, args);
 	va_end(args);
 	
 	if(mod)
-		CharacterTextC(target, x, y, 0, PRINTF_BUFF);
+		return CharacterTextC(target, x, y, 0, PRINTF_BUFF);
 	else
-		CharacterText(target, x, y, 0, PRINTF_BUFF);
-	return length;
+		return CharacterText(target, x, y, 0, PRINTF_BUFF);
+}
+
+
+/*
+	功能：自动调整指示器尺寸
+
+	FontInfo：字体信息句柄
+	target：指示器句柄
+	mod： 0：使用的函数与中文无关  1：函数关于中文
+	limitSize：尺寸限制，不设置可置NULL。内容为{最窄，最矮， 最宽，最高}，某位不限制可以置0
+
+	ret：发生尺寸修改时，返回1， 无则返回0
+
+*/
+
+uint8_t SetIndicatorSize(FontInfoType *FontInfo, menu_area *target, uint8_t mod, uint8_t *limitSize)
+{
+	uint16_t width;
+	uint16_t high;
+	uint8_t changeFlag=0;
+	
+	width = FontInfo->maxPix;
+	
+	switch(mod)
+	{
+		case 0:
+			high = (FontInfo->LBnum + 1) * FontInfo->ascsize[1];
+			break;
+		
+		default:
+			high = (FontInfo->LBnum + 1) * (FontInfo->hzsize[1] > FontInfo->ascsize[1] ? FontInfo->hzsize[1] : FontInfo->ascsize[1]);
+			break;
+	}
+	
+	if(limitSize)
+	{
+		if(limitSize[0]) width = width < limitSize[0] ? limitSize[0] : width;
+		if(limitSize[1]) high  = high < limitSize[1] ? limitSize[1] : high;
+		if(limitSize[2]) width = width > limitSize[2] ? limitSize[2] : width;
+		if(limitSize[3]) high  = high > limitSize[3] ? limitSize[3] : high;
+	}
+	
+	if(target->width!=width || target->high!=high)
+	{
+		target->width = width;
+		target->high = high;
+		changeFlag = 1;
+	}
+	return changeFlag;
 }
 
 // ----------------- 串 口 ------------------

@@ -6,24 +6,24 @@
 // ======================= 图 形 化 函 数 ========================
 
 
-unsigned char ReadPoint(int16_t x, int16_t y)
+static unsigned char ReadPoint(int16_t x, int16_t y)
 {
 	int px = x, py = (int)(y/8);
 	unsigned char dat=0;
 	
 	if(x<0 || y<0) return 0;
-	if(x>= SCREENWIDTH-1 || y>=SCREENHIGH) return 0;
+	if(x>= SCREENWIDTH-1 || y>=SCREENHIGH) return 0; // x 的 -1即放弃的最右侧一列缓冲区，可自行修改
 	
 	dat = (DisplayBuff[px + py*SCREENWIDTH]>>(y%8)) & 0x01;
 	
 	return dat;
 }
 
-void WritePoint(int16_t x, int16_t y, uint8_t w_d) 
+static void WritePoint(int16_t x, int16_t y, uint8_t w_d) 
 {
 	int px = x, py = (int)(y/8);
 	
-	if(x>=SCREENWIDTH-1|| y >= SCREENHIGH) return;
+	if(x>=SCREENWIDTH-1|| y >= SCREENHIGH) return; // x 的 -1即放弃的最右侧一列缓冲区，可自行修改
 	if(x<0 || y<0) return;
 	
 	if(w_d)
@@ -36,7 +36,6 @@ void WritePoint(int16_t x, int16_t y, uint8_t w_d)
 unsigned char read_point(int16_t x, int16_t y)
 {
 	unsigned char point = 0;
-	
 	point = ReadPoint(x, y);
 	return point;
 }
@@ -52,7 +51,9 @@ void write_point(int16_t x, int16_t y, uint8_t w_d)
 		case GraphicsRollColor: //反转显示
 			WritePoint(x,  y,  !read_point(x, y));
 			break;
-		
+		case GraphicsColless:
+			WritePoint(x, y, 0);
+			break;
 		default:
 			WritePoint(x,  y,  w_d);
 			break;
@@ -383,19 +384,7 @@ void RotateXY(int *xy, int centerX, int centerY,int x, int y,int Angle, char dir
 
 //--------  折 线 图 ------------
 
-/*
-	功能：内存清零
-	
-	
-*/
-void ClearnMemory(void *m, uint16_t size)
-{
-	uint8_t *p = (uint8_t *) m;
-	while(size--) {
-		*p = 0;
-		p++;
-	}
-}
+
 
 
 //折线图内存清零
@@ -752,7 +741,7 @@ void DrawCube(int centerX, int centerY, int size, float rotX, float rotY, float 
 	maxVal : 进度条满时最大值
 	direction : 0-3， 显示方向，顺时针旋转
 */ 
-ProgressBarTypedef * ProgressBarInit(ProgressBarTypedef *barobj, uint8_t width, uint8_t high, uint16_t maxVal, uint16_t direction)
+ProgressBarTypedef * ProgressBarInit(ProgressBarTypedef *barobj, uint8_t direction, uint8_t width, uint8_t high, uint16_t maxVal)
 {
 	barobj->BarVal = 0;
 	barobj->maxVal = maxVal;
@@ -761,6 +750,7 @@ ProgressBarTypedef * ProgressBarInit(ProgressBarTypedef *barobj, uint8_t width, 
 	barobj->R = (width<high?width:high)/2;
 	barobj->animation = DISABLE;
 	barobj->direction = direction%4;
+	barobj->attribute = 0;
 	return barobj;
 }
 /*
@@ -842,10 +832,136 @@ int16_t * ProgressBar(ProgressBarTypedef *barobj, int16_t x, int16_t y, uint16_t
 		break;
 		default : break;
 	}
-	DrawfillRoundRect(Barx, Bary, Barwidth, Barhigh, barobj->R);
-	DrawRoundRect(x, y, barobj->width, barobj->high, barobj->R);
+	if( !(barobj->attribute & hideindicator ) )
+		DrawfillRoundRect(Barx, Bary, Barwidth, Barhigh, barobj->R);
+	if( !(barobj->attribute & hideframe ) )
+		DrawRoundRect(x, y, barobj->width, barobj->high, barobj->R);
 
 	return xy;
 }
+//进度条属性设置
+void SetProBarAttibute(ProgressBarTypedef *barobj, uint8_t attibute)
+{
+	barobj->attribute |= attibute;
+}
+//进度条属性复位
+void ResProBarAttibute(ProgressBarTypedef *barobj, uint8_t attibute)
+{
+	barobj->attribute &= (~attibute);
+}
+
+
+/*
+	功能：oled界面模糊
+	n: 0-4  0不模糊 >=4类似清屏
+*/
+
+static const uint8_t BlurryData[]={0xff, 0x77, 0x33, 0x11, 0x00};
+
+void InterfaceBlurry(uint8_t n)
+{
+	uint16_t i, j, k;
+
+	if(n==0) return;
+	
+	n = n>4 ? 4 : n;
+
+	for(i=0; i<ScreenPara.screenhigh; i++) //高度
+	{
+		for(j=0; j<ScreenPara.screenwidth; j+=4) //宽度
+		{
+			for(k=0; k<4 && (j+k)<SCREENWIDTH; k++)
+			{
+				if(k<4-n)
+					DisplayBuff[i*SCREENWIDTH + j + k] &= BlurryData[n];
+				else
+					DisplayBuff[i*SCREENWIDTH + j + k] = 0x00;
+			}
+		}
+	}
+}
+
+static const uint8_t quitMenuBlurryspeed[]  = {NULL, 1, 3, 4}; // 1 -> *
+static const uint8_t enterMenuBlurryspeed[] = {NULL, 1, 3, 4}; // 1 <- *
+/*
+	功能：菜单进入、离开虚化
+
+	state: 0 菜单截停  1 菜单虚化
+
+	ret：1 开始虚化（处于当前菜单）  0 开始实化（处于切换后的菜单）
+
+	注意：下函数内的 MaxCount 与上两数组关联，越大，切换的越慢、需要的时间越长。
+				触发虚化时 输入响应 被禁止，内部主动改变指针时，请先判断是否能 输入响应，
+				再改变菜单指针
+				state=0 时，函数应放在   MenuAlwaysRun_PH 函数最开始处，
+				state=1 时，函数尽量放在 MenuAlwaysRun_PL 函数结束处
+*/
+#include "menufontshow.h" //字符函数
+
+uint8_t MenuDynamicBlurry(uint8_t state)
+{
+	const uint8_t MaxCount = 3;
+	
+	static menu_area *LastMenuTarget = NULL;
+	static menu_area *NowMenuTarget = NULL;
+	
+	static uint8_t haveCush = 0; //是否有消息
+	static uint8_t count=0;
+	
+	static uint32_t cushmes=0;
+	
+	switch(state)
+	{
+		case 0: //虚化
+			
+				if(haveCush==0 && cushIsNull() == false) //消息缓冲区不为空
+				{
+					cushmes = readCush();//获取缓冲区数据
+					if(cushmes==Menu_Father || cushmes==Menu_Sub) //是否符合
+					{
+						ResponseEnable = DISABLE; //结束虚化前，禁止按键输入响应
+						SetCushNull(true); //截停消息，清空标志
+						count = 0;
+						haveCush = 1; //开始虚化
+					}
+				}
+				if(haveCush)
+				{
+					if(count == 0)
+					{
+						NowMenuTarget = TargetMenuPointrt.TargetMenuP;
+						LastMenuTarget = TargetMenuPointrt.LastTargetMenuP;
+						TargetMenuPointrt.TargetMenuP = LastMenuTarget;
+					}
+					if( (++count) > MaxCount)
+					{
+						cushMes(cushmes); //消息补发
+						haveCush = 0;
+						TargetMenuPointrt.TargetMenuP = NowMenuTarget;
+						count--;
+					}
+				}
+			break;
+		
+		default: // 实化
+				if(haveCush)
+				{
+					InterfaceBlurry(quitMenuBlurryspeed[count]); // 1 -> *
+				}
+				else if(count)
+				{
+					InterfaceBlurry(enterMenuBlurryspeed[count--]); // * -> 1
+					if(count==0)
+					{
+						ResponseEnable = ENABLE; // 重新使能 输入响应
+					}
+				}
+			break;
+	}
+	return haveCush;
+}
+
+
+
 
 

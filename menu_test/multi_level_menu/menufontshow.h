@@ -4,26 +4,39 @@
 #include "menu.h"
 #include "menuconfig.h"
 
+typedef struct FONTINFO
+{
+	uint16_t ascnum; //英文数量
+	uint16_t hznum;  //汉字数量
+	uint16_t maxPix; //最长的一行像素值
+	uint8_t ascsize[2];//英文尺寸
+	uint8_t hzsize[2]; //汉字尺寸
+	uint8_t LBnum; //换行数量
+}FontInfoType;
+
+
 extern const uint8_t *font_SizeInf; //字体大小
 
 // 设置英文显示字体
 void SetFont(const uint8_t *xfont);
 
+// -- 单行显示 --
 
 // 功能：在菜单中写Asc字符串，target为NULL在屏幕写
-void MenuShowAscStr(menu_area *target, int16_t x, int16_t y, const uint8_t *str);
+FontInfoType* MenuShowAscStr(menu_area *target, int16_t x, int16_t y, const uint8_t *str);
 // 汉字 Asc 混合显示，target为NULL在屏幕写
-void MenuHzAndAsc(menu_area *target, int16_t x, int16_t y, const uint8_t *s_dat);
+FontInfoType* MenuHzAndAsc(menu_area *target, int16_t x, int16_t y, const uint8_t *s_dat);
 
+// -- 多行显示 --
 
 // 文本显示 <仅支持英文>   <ascw 字符个数！！>
-void CharacterText(menu_area *target, int16_t x, int16_t y, uint16_t ascw, const uint8_t *str);
-// 文本显示 <中英文混合显示> 行间隔以最大的字体高度执行！！
-void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint16_t ascw, const uint8_t *str);
+FontInfoType* CharacterText(menu_area *target, int16_t x, int16_t y, uint16_t ascw, const uint8_t *str);
+// 文本显示 <中英文混合显示> 行间隔以最大的字体高度执行！！ <ascw 像素>
+FontInfoType* CharacterTextC(menu_area *target, int16_t x, int16_t y, uint16_t ascw, const uint8_t *str);
 
 
 // 功能：在菜单中写Asc数字，target为NULL在屏幕写
-void MenuShowNum(menu_area *target, int16_t x, int16_t y, uint8_t len, uint32_t num);
+FontInfoType * MenuShowNum(menu_area *target, int16_t x, int16_t y, uint8_t len, uint32_t num);
 
 
 /*
@@ -36,7 +49,20 @@ void MenuShowNum(menu_area *target, int16_t x, int16_t y, uint8_t len, uint32_t 
 	ret：输出的字符个数
 	注意：内部申请固定内存100字节，不要输出太长字符串
 */
-uint16_t m_printf(menu_area *target, uint8_t mod, int16_t x, int16_t y, const char *format, ...);
+FontInfoType* m_printf(menu_area *target, uint8_t mod, int16_t x, int16_t y, const char *format, ...);
+
+
+/*
+	功能：自动调整指示器尺寸
+
+	FontInfo：字体信息句柄
+	target：指示器句柄
+	mod： 0：使用的函数与中文无关  1：函数关于中文
+	limitSize：尺寸限制，不设置可置NULL。内容为{最窄，最矮， 最宽，最高}，某位不限制可以置0
+	ret：发生尺寸修改时，返回1， 无则返回0
+*/
+uint8_t SetIndicatorSize(FontInfoType *FontInfo, menu_area *target, uint8_t mod, uint8_t *limitSize);
+
 
 
 // -------------- 串 口 --------------

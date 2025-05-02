@@ -7,14 +7,14 @@ menu_test\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h
 menu_test\main.o: ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h
 menu_test\main.o: ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h
 menu_test\main.o: ../Drivers/CMSIS/Include/core_cm3.h
-menu_test\main.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+menu_test\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 menu_test\main.o: ../Drivers/CMSIS/Include/cmsis_version.h
 menu_test\main.o: ../Drivers/CMSIS/Include/cmsis_compiler.h
 menu_test\main.o: ../Drivers/CMSIS/Include/cmsis_armcc.h
 menu_test\main.o: ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/system_stm32f1xx.h
 menu_test\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h
 menu_test\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h
-menu_test\main.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+menu_test\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
 menu_test\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc_ex.h
 menu_test\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h
 menu_test\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio_ex.h
@@ -36,8 +36,8 @@ menu_test\main.o: ../Core/Inc/spi.h
 menu_test\main.o: ../Core/Inc/tim.h
 menu_test\main.o: ../Core/Inc/gpio.h
 menu_test\main.o: ../multi_level_menu/menu.h
-menu_test\main.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
-menu_test\main.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+menu_test\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+menu_test\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
 menu_test\main.o: ../multi_level_menu/oled.h
 menu_test\main.o: ../multi_level_menu/menu.h
 menu_test\main.o: ../multi_level_menu/menuconfig.h

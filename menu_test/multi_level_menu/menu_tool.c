@@ -6,12 +6,15 @@
 
 MessageTypedef *Message_Key = NULL; //按键消息广播列表 
 
+static uint32_t cushMesData = 0;//缓冲消息
+static bool couhIsNULL=true; //缓冲是否为空标志
+
 /**
 	功能：  消息广播
 	mes：   消息链表句柄 
 	mesage：要广播的消息 
  **/
-void MessageBroadcast(MessageTypedef *mes, uint16_t mesage)
+void MessageBroadcast(MessageTypedef *mes, uint32_t mesage)
 {
 	if(mes == NULL) return;
 	for( ; ; ) 
@@ -24,6 +27,56 @@ void MessageBroadcast(MessageTypedef *mes, uint16_t mesage)
 		if(mes == NULL) break;
 	}
 }
+
+//发送缓冲
+//注意：消息缓冲区为空才能写入成功
+void cushMes(uint32_t mesage)
+{
+	if(couhIsNULL == true)
+	{
+		cushMesData = mesage;
+		couhIsNULL = false;
+	}
+}
+
+/*
+	功能：若有消息，广播缓冲区的消息，发送成功后，状态自动复位
+	mes：消息的《头句柄》
+	注意：已自动判断，不会重复发送
+*/
+void cushMesBro(MessageTypedef *mes)
+{
+	if(mes == NULL) return;
+	
+	if(couhIsNULL == false)
+	{
+		MessageBroadcast(mes, cushMesData);
+		couhIsNULL = true;
+	}
+}
+
+/*
+	功能：判断缓冲区是否为空
+	ret：1 空，0不为空
+*/
+uint8_t cushIsNull(void)
+{
+	return couhIsNULL;
+}
+
+// 设置缓冲为空 true 或 false
+void SetCushNull(bool sta)
+{
+	couhIsNULL = sta;
+}
+
+// 读缓冲区
+uint32_t readCush(void)
+{
+	return cushMesData;
+}
+
+
 
 /*
 	功能：消息初始化
@@ -87,6 +140,10 @@ static void ChangeMenuX(menu_area *target, int16_t showSX, int16_t showEX, int16
 				heard->menulistend = DISABLE;
 			}
 		}
+		else 
+		{
+			heard->menulistend = DISABLE;
+		}
 		
 		if(heard == tail) break;
 		heard = heard->next;
@@ -95,7 +152,7 @@ static void ChangeMenuX(menu_area *target, int16_t showSX, int16_t showEX, int16
 
 /*
 	功能：滚动显示
-	target：当前所处的任一菜单指针， 滚动参考为此
+	target：当前所处的任一菜单指针， >> 滚动参考为此 <<
 	showSY：列表允许显示的起始y坐标 头坐标
 	showEY：列表允许显示的结束y坐标 底坐标
 	TarSY： 指针允许的起始y坐标     头坐标 应 >= showSY
@@ -107,7 +164,7 @@ static void ChangeMenuX(menu_area *target, int16_t showSX, int16_t showEX, int16
 	注意：该函数会改变大量菜单的menulistend属性，在该菜单所在的菜单列表中，对于出入菜单特殊功能，
 		建议使用EnterMenu，ExitMenu。EnterShowMenuList与ExitShowMenuList存在多次触发问题
 */
-uint8_t ScrollingDisplay_X(menu_area *target, int16_t showSX, uint8_t showEX, int16_t TarSX, int16_t TarEX, uint8_t style) 
+uint8_t ScrollingDisplay_X(menu_area *target, int16_t showSX, int16_t showEX, int16_t TarSX, int16_t TarEX, uint8_t style) 
 {
 	const uint8_t speed1=17, speed2=9, speed3=3;
 	uint8_t state = 1;
@@ -181,6 +238,10 @@ static void ChangeMenuY(menu_area *target, int16_t showSY, int16_t showEY, int16
 				heard->menulistend = DISABLE;
 			}
 		}
+		else
+		{
+			heard->menulistend = DISABLE;
+		}
 		
 		if(heard == tail) break;
 		heard = heard->next;
@@ -189,7 +250,7 @@ static void ChangeMenuY(menu_area *target, int16_t showSY, int16_t showEY, int16
 
 /*
 	功能：滚动显示
-	target：当前所处的任一菜单指针, 滚动参考为此
+	target：当前所处的任一菜单指针, >> 滚动参考为此 <<
 	showSY：列表允许显示的起始y坐标 头坐标
 	showEY：列表允许显示的结束y坐标 底坐标
 	TarSY： 指针允许的起始y坐标     头坐标 应 >= showSY
@@ -201,7 +262,7 @@ static void ChangeMenuY(menu_area *target, int16_t showSY, int16_t showEY, int16
 	注意：该函数会改变大量菜单的menulistend属性，在该菜单所在的菜单列表中，对于出入菜单特殊功能，
 		建议使用EnterMenu，ExitMenu。EnterShowMenuList与ExitShowMenuList存在多次触发问题
 */
-uint8_t ScrollingDisplay_Y(menu_area *target, int16_t showSY, uint8_t showEY, int16_t TarSY, int16_t TarEY, uint8_t style) 
+uint8_t ScrollingDisplay_Y(menu_area *target, int16_t showSY, int16_t showEY, int16_t TarSY, int16_t TarEY, uint8_t style) 
 {
 	const uint8_t speed1=17, speed2=9, speed3=3;
 	uint8_t state = 1;
@@ -227,7 +288,7 @@ uint8_t ScrollingDisplay_Y(menu_area *target, int16_t showSY, uint8_t showEY, in
 			else if(TarSY-target->y>speed2) ChangeMenuY(target, showSY, showEY, speed2, 1);
 			else if(TarSY-target->y>speed3) ChangeMenuY(target, showSY, showEY, speed3, 1);
 			else ChangeMenuY(target, showSY, showEY, 1, 1);
-		} 
+		}
 		state = 0;          
 	}
 	else if(target->y+target->high-1 > TarEY) {
@@ -248,16 +309,22 @@ uint8_t ScrollingDisplay_Y(menu_area *target, int16_t showSY, uint8_t showEY, in
 // ************* 菜 单 滑 动 ****************
 
 /*
-	功能：菜单堆叠（与显示的头菜单重叠）
+	功能：菜单堆叠（向下）
 	target：句柄
+	mod: 0:与头菜单重叠  1：与当前菜单重叠
 */
-void MenuCoorAlignment(menu_area *target)
+void MenuCoorAlignment(menu_area *target, uint8_t mod)
 {
 	if(target == NULL) return ;
 
-	menu_area *MenuShowHead = MenuListShowHead(target);
-	menu_area *MenuShowTail = MenuListShowTail(target);
+	menu_area *MenuShowHead;
+	menu_area *MenuShowTail = FindMeunListTail(target);
 	menu_area *p;
+	
+	if(mod)
+		MenuShowHead = target;
+	else
+		MenuShowHead = FindMeunListHeard(target);
 
 	if(MenuShowHead == MenuShowTail) return ;
 
@@ -292,15 +359,15 @@ uint8_t MenuCoorRecovery(menu_area *target, uint8_t mod, uint8_t style)
 	
 	if(target == NULL) return 1;
 
-	menu_area *MenuShowHead = MenuListShowHead(target);
-	menu_area *MenuShowTail = MenuListShowTail(target);
+	menu_area *MenuShowHeard = FindMeunListHeard(target);
+	menu_area *MenuShowTail = FindMeunListTail(target);
 	menu_area *p;
 
 	int16_t dif;
 
-	if(MenuShowHead == MenuShowTail) return 1;
+	if(MenuShowHeard == MenuShowTail) return 1;
 
-	p = MenuShowHead->next;
+	p = MenuShowHeard->next;
 
 	for( ; ; )
 	{
@@ -365,17 +432,17 @@ uint8_t MenuCoorRecovery(menu_area *target, uint8_t mod, uint8_t style)
 	注意：当使用“特殊功能”的EnterMenu来堆叠菜单 （MenuCoorAlignment） 时，此函数应比
 			MenuCoorAlignment执行的优先级低，（如可放入在 MenuAlwaysRun_PM）
 */
-void ListSwitchIns(MessageTypedef *mes, int16_t start, int16_t end, bool dir)
+void ListSwitchIns(MessageTypedef *mes, bool dir, int16_t start, int16_t end)
 {
 	uint8_t sta=0;
-	uint8_t (*ScrollingDisplay)(menu_area *target, int16_t showSY, uint8_t showEY, int16_t TarSY, int16_t TarEY, uint8_t style);
+	uint8_t (*ScrollingDisplay)(menu_area *target, int16_t showSY, int16_t showEY, int16_t TarSY, int16_t TarEY, uint8_t style);
 
 	if(dir == 0)
 		ScrollingDisplay = ScrollingDisplay_Y;
 	else
 		ScrollingDisplay = ScrollingDisplay_X;
 
-	if( MesHave( (*mes)) ) //有消息
+	if( MesHave((*mes)) ) //有消息
 	{
 		if(MesRead( (*mes) ) == Menu_Father) {
 			if(MenuCoorRecovery(TargetMenu, dir, 1)) {
@@ -399,7 +466,15 @@ void ListSwitchIns(MessageTypedef *mes, int16_t start, int16_t end, bool dir)
 static FunctionTicker *FunctionTickerPointer = NULL;
 static uint8_t FTrigFlag=DISABLE;
 
-FunctionTicker *SetFunctionTicker(FunctionTicker *FTtarget, uint32_t ms, enum FUNCTINOTICKEROPTIONS RunMod, void (*Function)(void))
+/*
+	功能：函数定时执行
+	FTtarget：句柄
+	ms：定时时间
+	RunMod：模式  normalRun或interruptRun
+	Function： 执行函数指针
+	parpass：需要传递的参数
+*/
+FunctionTicker *SetFunctionTicker(FunctionTicker *FTtarget, uint32_t ms, enum FUNCTINOTICKEROPTIONS RunMod, void (*Function)(uint32_t parpass), uint32_t parpass)
 {
 	if(FTtarget == NULL) return NULL;
 	
@@ -421,16 +496,19 @@ FunctionTicker *SetFunctionTicker(FunctionTicker *FTtarget, uint32_t ms, enum FU
 	FTtarget->ms = ms;
 	FTtarget->count = 0;
 	FTtarget->RunMod = RunMod;
+	FTtarget->NumOfRun = 0;
 	FTtarget->Function = Function;
-	
+	FTtarget->parpass = parpass;
 	return FTtarget;
 }
 /*
 	功能：函数定时执行
 	ms：定时时间
 	RunMod：模式  normalRun或interruptRun
+	Function： 执行函数指针
+	parpass：需要传递的参数
 */
-FunctionTicker *AddToFunctionTicker(uint32_t ms, enum FUNCTINOTICKEROPTIONS RunMod, void (*Function)(void))
+FunctionTicker *AddToFunctionTicker(uint32_t ms, enum FUNCTINOTICKEROPTIONS RunMod, void (*Function)(uint32_t parpass), uint32_t parpass)
 {
 	FunctionTicker *FTtarget;
 	
@@ -438,7 +516,7 @@ FunctionTicker *AddToFunctionTicker(uint32_t ms, enum FUNCTINOTICKEROPTIONS RunM
 	
 	if(FTtarget == NULL) return NULL;
 	
-	return SetFunctionTicker(FTtarget, ms, RunMod, Function);
+	return SetFunctionTicker(FTtarget, ms, RunMod, Function, parpass);
 }
 
 /*
@@ -455,8 +533,12 @@ void FunctionTickerRunIRQ(uint16_t ms)
 			p->count += ms;
 			if(p->count >= p->ms) {
 				p->count=0;
+				
+				if(p->NumOfRun > 1) p->NumOfRun--;
+				else if(p->NumOfRun==1) p->run = DISABLE;
+				
 				if(p->RunMod == interruptRun) {
-					if(p->Function) p->Function();
+					if(p->Function) p->Function(p->parpass);
 				}
 				else if(p->RunMod == normalRun) {
 					p->Flag = ENABLE;
@@ -466,7 +548,6 @@ void FunctionTickerRunIRQ(uint16_t ms)
 		p=p->next;
 	}
 }
-
 /*
 	功能：在while中查询函数是否执行
 */
@@ -480,12 +561,106 @@ void FunctionTickerRun(void)
 		while(p) {
 			if(p->Flag == ENABLE) {
 				p->Flag = DISABLE;
-				if(p->Function) p->Function();
+				if(p->Function) p->Function(p->parpass);
 			}
 			p=p->next;
 		}
 	}
 }
+
+// **************************************
+// *************** 按键 *****************
+// **************************************
+
+
+static KeyTypedef *KeyListHeart = NULL; //按键头节点
+
+// 按键初始化
+void KeyDisInit(KeyTypedef *key, uint8_t putsta)
+{
+	KeyTypedef *p = KeyListHeart;
+	
+	if(KeyListHeart==NULL) {
+		KeyListHeart = key;
+	}
+	else {
+		while(p->next != NULL) {
+			p = p->next;
+		}
+		p->next = key;
+	}
+	key->KEYPUTSTA = putsta;
+	key->ReadKey = !putsta;
+	key->keypt = 300; //按键响应速度（需与下方一起修改）
+	key->keynpflag=0; // key n put flag
+	key->keypsc=0;// key puts count
+	key->keylpt=0;// key long put time
+	key->keystate=0;
+	key->keycr=0; //key can read
+	key->next=NULL;
+}
+
+
+// 获取按键状态
+uint8_t GetKeyState(KeyTypedef *key, uint8_t *state, uint8_t *keycount)
+{
+	if(key->keycr == 1) {
+		*state = key->keystate;
+		*keycount = key->keypsc;
+		key->keypsc = 0;
+		key->keycr = 0;
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+
+
+// 按键处理 中断
+void KeyDisposeISR(uint16_t ms)
+{
+	KeyTypedef *p = KeyListHeart;
+	
+	while(p) {
+		if(p->keycr==1) goto loop;
+		if(p->ReadKey == p->KEYPUTSTA) 
+		{
+			if(p->keypt > ms) 
+				p->keypt -= ms;
+			else 
+				p->keypt = 0;
+			
+			if(p->keypt > 0) { // n击
+				if(p->keynpflag==0) {
+					p->keypt = 200;
+					p->keypsc++;
+					p->keynpflag=1;
+				}
+				p->keystate=1; 
+			}
+			
+			if(p->keypt==0) { // 长按
+				p->keylpt += ms;
+				if(p->keylpt>200) {
+					p->keylpt=0;
+					p->keycr=1;
+				}
+				p->keystate=2; 
+			}
+		}
+		else {
+			p->keynpflag=0;
+			p->keylpt=0;
+			if(p->keypt<300) p->keypt+=ms;
+			if( p->keystate==1 && ( p->keypt > 299 ) ) p->keycr=1;
+		}
+		loop:
+		p = p->next;
+	}
+}
+
 
 
 
@@ -497,14 +672,14 @@ void FunctionTickerRun(void)
 // **********************************************
 
 // t=0: dat相等运行一次  t=1：dat2改变运行一次!!!只能被调用一次!!!
-bool tRunOne(TypeRunOne *RunOne, bool t, unsigned int dat1,unsigned int dat2)
+bool tRunOne(TypeRunOne *RunOne, bool t, uint32_t dat1,uint32_t dat2)
 {
-	if(!t) //0: 值为dat运行一次
+	if(t==0) //0: 值为dat运行一次
 	{
 		if(dat1 != dat2)
 		{
 			RunOne->floag = 1;
-		}		
+		}
 		if(RunOne->floag==1 && (dat1 == dat2))
 		{
 			RunOne->floag = 0;
@@ -523,11 +698,23 @@ bool tRunOne(TypeRunOne *RunOne, bool t, unsigned int dat1,unsigned int dat2)
 }
 
 
+// ****** 工具 **********
 
-// ****** 计算工具 **********
+/*
+	功能：内存清零
+	
+	
+*/
+void ClearnMemory(void *m, uint16_t size)
+{
+	uint8_t *p = (uint8_t *) m;
+	while(size--) {
+		*p = 0;
+		p++;
+	}
+}
 
-
-uint16_t myabs(int16_t dat)
+uint32_t myabs(int32_t dat)
 {
 	return dat<0?-dat:dat;
 }

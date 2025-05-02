@@ -1,5 +1,6 @@
 #include "menufontshow.h"
 #include "Graphicalfunctions.h"
+#include "menu.h"
 
 extern const unsigned char F8X16_SizeInf[2]; //下面字符编码的尺寸信息 宽x高
 //阴码 列行式 逆向
@@ -32,7 +33,7 @@ void MenuShowAsc(menu_area *target,const uint8_t *font,const uint8_t *font_SizeI
 	{
 		for(w=0; w<wight; w++) //字宽
 		{
-			w_b = ( font[c*wight*DIVIDEUP(high) + w+wight*(h/8)] >> (h%8)) & 1;
+			w_b = ( font[c*wight*DIVIDEUP(high) + w+wight*(h/8)] >> (h%8) ) & 1;
 			if(w_b) {
 				if(target == NULL) write_point(w+x, h+y, 1);
 				else               MenuSetPoint(target, w+x, h+y, 1);

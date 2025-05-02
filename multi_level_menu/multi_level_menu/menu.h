@@ -9,13 +9,11 @@
 /*
 特别注意：
 
-	在中断中：
-		以下函数如要使用，请先仿照 MenuHeartTime() 函数对ScreenPara.refresh进行判断，
-		确认处在释放状态后，先将该值置1，再使用以下函数。如不释放，屏幕将刷新
+	请勿在中断中使用以下函数！！！
 		
 	每个函数详细的注意事项以及返回值和功能等，请跳转该函数上部查看
 	
-	该菜单使用malloc申请空间，无free，注意内存溢出。菜单创建大小为38字节，菜单时间队列12字节，
+	该菜单使用malloc申请空间，无free，注意内存溢出。菜单创建大小为40字节，菜单时间队列12字节，
 	特殊功能12字节，请确保heap(堆)大小足够
 */
 
@@ -48,6 +46,12 @@ enum SpecialInformation
 	MenuTimeForce = 0x20, //时间列表强制执行。 与MenuTime配合使用，否则无效，无需对此判断，if末尾加return
 };
 
+//菜单时间队列
+typedef struct MENU_TIMEMS
+{
+	uint16_t counttime;
+	uint16_t timems;
+}menu_timems;
 
 //菜单参数
 typedef struct MENU_AREA
@@ -64,17 +68,10 @@ typedef struct MENU_AREA
 	struct MENU_AREA *subclass; //子类
 	struct MENU_AREA *father;   //父类
 	void (*menuinterface)(struct MENU_AREA *target); //菜单内容
+	menu_timems *menu_time;
 	uint16_t userinformation;//用户自定义信息
 }menu_area;
 
-//菜单时间队列
-typedef struct MENU_TIMEMS
-{
-	uint16_t counttime;
-	uint16_t timems;
-	menu_area *target;
-	struct MENU_TIMEMS *next;
-}menu_timems;
 
 //特殊功能队列
 typedef struct SPECIALNFORMATION

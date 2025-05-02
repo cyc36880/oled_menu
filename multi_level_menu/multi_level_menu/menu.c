@@ -104,8 +104,6 @@ void ClearnBuff(void)
 }
 
 
-
-
 // ========================== 菜 单 ==================================
 /*
 *	功能：注册或添加菜单 
@@ -119,7 +117,7 @@ menu_area * AddToMenuList(uint16_t x, uint16_t y, uint16_t width, uint16_t high,
 	menu_area *k;
 	
 	p = (menu_area *) malloc(sizeof(menu_area));
-	
+	if(!p) return NULL;
 	if(transfer != NULL)  //尾部加入 
 	{
 		k = FindMeunListTail(transfer); //找到文件尾部
@@ -144,6 +142,7 @@ menu_area * AddToMenuList(uint16_t x, uint16_t y, uint16_t width, uint16_t high,
 	p->father = NULL;    // 父类 
 	p->menuinterface = NULL; // 菜单内容
 	p->userinformation = NULL; //用户自定义信息
+	p->menu_time = NULL; //时间队列
 	return p;
 }
 
@@ -288,7 +287,6 @@ menu_area *FindMeunListHeard(menu_area *target)
 	for( ; ; )
 	{
 		if(heard->id == MENUHEARDID) break; // 菜单列表头id 
-		if(heard->previous == NULL) break; // 检查上一个是否存在
 		heard = heard->previous;
 	}
 	return heard;
@@ -296,7 +294,7 @@ menu_area *FindMeunListHeard(menu_area *target)
 
 
 /*
-	功能：找到菜单所在菜单列表的菜单尾，空指针或超过最大列表数返回NULL 
+	功能：找到菜单所在菜单列表的菜单尾，空指针返回NULL 
 	target：菜单指针
 */
 menu_area *FindMeunListTail(menu_area *target) 
@@ -327,7 +325,6 @@ menu_area *MenuListShowHead(menu_area *target)
 	
 	for( ; ; )
 	{
-		if(targetmenu->previous == NULL) return targetmenu; //上一个不存在
 		if(targetmenu->id == MENUHEARDID) return targetmenu;//上一个为头
 		if(targetmenu->previous->menulistend == 1) return targetmenu; //上一个为结尾
 		targetmenu = targetmenu->previous;
@@ -372,12 +369,7 @@ void MakeMenuListRing(menu_area *target)
 }
 
 
-
-
-
 // ==================== 时 间 队 列 =================
-
-static menu_timems *MenuTimeList = NULL;
 
 /*
 	功能：将菜单添加入时间列表，在该界面下，每ms执行指定菜单
@@ -388,33 +380,13 @@ static menu_timems *MenuTimeList = NULL;
 */
 static void AddToMenuTimeList(menu_area *target, uint16_t ms)
 {
-	menu_timems *p;
-	menu_timems *k = MenuTimeList;
-	
 	if(target == NULL) return; // 检查地址是否有效
 	
-	if(MenuTimeList == NULL) { //第一次创建
-		MenuTimeList = (menu_timems *) malloc(sizeof(menu_timems));
-		MenuTimeList->counttime=0; //默认起始计数值
-		MenuTimeList->timems = ms; // 想要执行时间间隔
-		MenuTimeList->target = target; //目标菜单
-		MenuTimeList->next=NULL; // 时间列表下一个为空
-	}
-	else{
-		for( ; ; ){ //找到时间列表尾
-			if(k->next == NULL) break;
-			k = k->next;
-		}
-		p = (menu_timems *) malloc(sizeof(menu_timems));
-		p->counttime=0; //默认起始计数值
-		p->timems = ms; // 想要执行时间间隔
-		p->target = target; //目标菜单
-		p->next=NULL; // 时间列表下一个为空
-		k->next = p; //与上一个链接
-	}
+	target->menu_time = (menu_timems *) malloc(sizeof(menu_timems));
+	if(!(target->menu_time)) return;
+	target->menu_time->counttime=0; //默认起始计数值
+	target->menu_time->timems = ms; // 想要执行时间间隔
 }
-
-
 
 
 // ====================== 特 殊 功 能 ========================
@@ -426,7 +398,6 @@ static struct SPECIALNFORMATION *SpecialFunction = NULL;
 	target：要注册的菜单
 	function：特殊功能表里的指针，可与
 	ms；延时时间，含MenuTime时，ms为延时，不含时，ms不被使用，一般填NULL
-	注意：除时间列表外的其它特殊功能为后来添加，嵌套使用，其它特殊功能可能存在bug
 */
 void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms)
 {
@@ -445,6 +416,7 @@ void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms)
 	
 	if(SpecialFunction == NULL){
 		SpecialFunction = (TypedefSpeFor *) malloc(sizeof(TypedefSpeFor));
+		if(!SpecialFunction) return;
 		SpecialFunction->target = target;
 		SpecialFunction->function = function;
 		SpecialFunction->next = NULL;
@@ -456,6 +428,7 @@ void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms)
 			k = k->next;
 		}
 		p = (TypedefSpeFor *) malloc(sizeof(TypedefSpeFor));
+		if(!p) return;
 		p->target = target; //目标菜单
 		p->function = function; // 特殊功能
 		p->next=NULL; // 时间列表下一个为空
@@ -473,6 +446,7 @@ bool TriggerCheck(menu_area *target, enum SpecialInformation function)
 {
 	bool triggerflag = 0;
 	
+	if(!target) return 0;
 	if( (target->userinformation)&function ){
 		triggerflag = 1;
 		target->userinformation &= ~function;
@@ -528,8 +502,6 @@ static void DrawMenuRectangle(menu_area *target)
 
 
 
-
-
 // ======================== 系 统 调 用 ====================
 
 menu_area * TargetMenu = NULL; // 实时目标菜单
@@ -578,54 +550,41 @@ static bool RefreshFlagForHeart = 0; //时间列表刷新标志
 
 void MenuHeartTime(void)
 {
-	menu_timems *p = MenuTimeList; //时间列表
-	menu_area *Targetp = NULL; //菜单
-	menu_area *Targetph = TargetMenu; //菜单
+	menu_area *p = TargetMenu; //菜单
 	menu_area *MenuShowTail = NULL; //显示菜单尾
 	
 	bool refreshflag = 0; //屏幕刷新标志，0不刷新，1刷新
 	
-	if(!MenuHeartTimeStart) return;
+	if(!MenuHeartTimeStart) return; //是否开始
 	
-	if(Targetph==NULL) return; //检查地址是否有效
-	if(p == NULL) return; //检查是否创建时间列表
+	if(p==NULL) return; //检查地址是否有效
 	
 	RefreshFlagForHeart=1; //屏幕刷新
 	
-	Targetph = MenuListShowHeadForHeart(Targetph);// 找到开始显示的头
-	MenuShowTail = MenuListShowTailForHeart(Targetph);//显示菜单尾
+	p = MenuListShowHeadForHeart(p);// 找到开始显示的头
+	MenuShowTail = MenuListShowTailForHeart(p);//显示菜单尾
 	
 	for( ; ; )
 	{
-		Targetp = Targetph;
-		if(MenuListShowHeadForHeart(p->target) != MenuListShowHeadForHeart(TargetMenu)) goto loop; //判断是否处于同一显示菜单列表
-		for( ; ; ) // 是否在显示页面中
-		{
-			if(Targetp == p->target) break; // 在该页面
-			
-			if(Targetp==MenuShowTail) goto loop; //到达显示菜单列表底部
-			Targetp = Targetp->next;
-		}
-		if(++(p->counttime) >= p->timems){
-			p->counttime=0;
-			p->target->userinformation |= MenuTime;
-			if( (p->target->userinformation) & MenuTimeForce ){
-				(p->target->menuinterface)(p->target); //执行指向函数
+		if(p->menu_time != NULL){ //是否创建
+			p->menu_time->counttime++; //计时
+			if( (p->menu_time->counttime) == p->menu_time->timems){ //到达计时点
+				p->menu_time->counttime=0; //计时复位
+				p->userinformation |= MenuTime; //赋值状态
+				if( (p->userinformation)& MenuTimeForce ){ //是否强制执行
+					if(!(p->menuinterface)){
+						p->menuinterface(p); //执行指向函数
+					}
+				}
+				refreshflag = 1;
 			}
-			refreshflag = 1;
 		}
-		loop:; // 不在该页面
-		if(p->next == NULL) { //到达时间列表尾部
-			if( !refreshflag ){
-				RefreshFlagForHeart = 0; 
-			}
-			return;
-		}
-		p = p->next;
+		if(p==MenuShowTail) break;
+		p=p->next;
 	}
+	
+	if(!refreshflag) RefreshFlagForHeart=0;//屏幕刷新
 }
-
-
 
 /*
 	功能：菜单列表各个菜单内容循环显示
@@ -633,30 +592,23 @@ void MenuHeartTime(void)
 static void MenuListInterface(void)
 {
 	menu_area *p = TargetMenu;
+	menu_area *pTail = NULL;
 	
 	if(p==NULL) return; //检查地址是否有效
 	
-	for( ; ; ) // 找到开始显示的头
+	p = MenuListShowHead(p); //显示头
+	pTail = MenuListShowTail(p);//显示尾
+	
+	for( ; ; )
 	{
-		if(p->id == MENUHEARDID) break; //检查当前是否为标准菜单头
-		if(p->previous == NULL) break; // 检查上一个菜单是否存在
-		if(p->previous->menulistend) break; // 检查本列表上一界面是否为结尾
-		p = p->previous;
-	}
-
-	for( ; ; ) // 从开始显示的头显示到指定尾
-	{
-		if(p->menuinterface != NULL){ //是否有指定的图像函数	
-			(p->menuinterface)(p);
+		if(p->menuinterface){
+			p->menuinterface(p);
 		}
-		if(p->next==NULL) return; //到达列表底部
-		if(p->menulistend) return;
-		if(p->next->id==MENUHEARDID) return;
+		
+		if(p == pTail) break; 
 		p = p->next;
 	}
 }
-
-
 
 /*
 	功能：特殊功能运行
@@ -758,7 +710,6 @@ static void MenuCheckedStyle(menu_area *target)
 {
 	DrawMenuRectangle(target); // 用户菜单选中
 }
-
 
 /*
 	功能：菜单运行函数。 the end 之前，越靠后屏幕显示优先级越高

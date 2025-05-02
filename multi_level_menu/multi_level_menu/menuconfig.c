@@ -14,7 +14,6 @@ void test2_5(menu_area *target);
 void test3_1(menu_area *target);
 
 extern uint32_t adcbuf[];
-
 /*
 	功能：初始化菜单列表 <此函数名不可修改>
 */
@@ -36,8 +35,8 @@ void MakeMenuHeard(void)
 	AddToMenuList(127-9, 63-16, 8*1, 16, 1, menuheard)	->menuinterface = test2_4;;
 	AddToMenuList(0, 0, 8*1, 16, 0, menuheard)			->menuinterface = test2_5;
 	
-	AddToSpecialFunction(MenuListAddressing(menuheard, 0, 1),  MenuTime | ExitShowMenuList, 500); //定时执行+退出执行
-	AddToSpecialFunction(MenuListAddressing(menuheard, 0, 4),  MenuTime | EnterShowMenuList | MenuTimeForce, 100); //定时执行
+	AddToSpecialFunction(MenuListAddressing(menuheard, 0, 1),  MenuTime | ExitShowMenuList, 1000); //定时执行+退出执行
+	AddToSpecialFunction(MenuListAddressing(menuheard, 0, 4),  MenuTime | EnterShowMenuList, 100); //定时执行
 	
 	MakeMenuListRing(menuheard);//首尾相连
 	
@@ -125,8 +124,7 @@ void test2_5(menu_area *target)
 	static uint8_t i =0;
 	
 	if(TriggerCheck(target, MenuTime)){
-		if(++i >= 100) i=0;
-		return;
+		if(++i >= 10) i=0;
 	}
 	if(TriggerCheck(target, EnterShowMenuList)){
 		i=0;

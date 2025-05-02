@@ -101,7 +101,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	
 	OLED_Init(); // OLED初始化
-	MakeMenuHeard(); //菜单列表初始化
+	MakeMenu(); //菜单列表初始化
 	HAL_TIM_Base_Start_IT(&htim2);
 	HAL_ADC_Start_DMA(&hadc1, adcbuf, 2);
   /* USER CODE END 2 */

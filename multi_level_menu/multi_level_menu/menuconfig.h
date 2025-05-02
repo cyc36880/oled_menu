@@ -4,7 +4,7 @@
 #include "menu.h"
 
 //功能：初始化菜单列表
-void MakeMenuHeard(void);
+void MakeMenu(void);
 
 #endif
 

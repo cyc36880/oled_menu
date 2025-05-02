@@ -7,7 +7,6 @@ extern uint32_t adcbuf[];
 
 // ================================= 设 备 ========================================
 
-static bool KeyPutDownFlag = 0; // 按键按下标志 （使只有按键才触发检查）
 enum MenuState StatusInformation; //输入设备状态
 
 /*
@@ -77,7 +76,6 @@ static void EquipmentState(void)
 	if(KeyState(&StatusInformation)){ //按键扫描
 		if(StatusInformation != Menu_noaction){ //非空闲
 			ScreenPara.refresh = 1;
-			KeyPutDownFlag = 1; //按键按下标志置1
 		}
 	}
 }
@@ -158,7 +156,8 @@ menu_area * AddToMenuList(uint16_t x, uint16_t y, uint16_t width, uint16_t high,
 	p->subclass = NULL;  //子类 
 	p->father = NULL;    // 父类 
 	p->menuinterface = NULL; // 菜单内容
-	p->userinformation = NULL; //用户自定义信息
+	p->specialfeatures = NULL; //特使功能
+	p->specfeattrigflag = NULL;
 	p->menu_time = NULL; //时间队列
 	return p;
 }
@@ -392,7 +391,7 @@ void MakeMenuListRing(menu_area *target)
 	功能：将菜单添加入时间列表，在该界面下，每ms执行指定菜单
 	target：指定菜单
 	ms：间隔时间
-	注意：该函数将占用 userinformation，执行指定列表时，会将 userinformation 置 1， 
+	注意：该函数将占用 specialfeatures，执行指定列表时，会将 specialfeatures 置 1， 
 		  用于判断是不是时间列表函数执行的该函数
 */
 static void AddToMenuTimeList(menu_area *target, uint16_t ms)
@@ -408,8 +407,6 @@ static void AddToMenuTimeList(menu_area *target, uint16_t ms)
 
 // ====================== 特 殊 功 能 ========================
 
-static struct SPECIALNFORMATION *SpecialFunction = NULL;
-
 /*
 	功能：特殊功能注册
 	target：要注册的菜单
@@ -418,40 +415,13 @@ static struct SPECIALNFORMATION *SpecialFunction = NULL;
 */
 void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms)
 {
-	TypedefSpeFor *p;
-	TypedefSpeFor *k = SpecialFunction;
 	
 	if(target == NULL) return;
 	
-	if(function & MenuTime) { //时间队列
-		AddToMenuTimeList(target, ms);
-		if( function & MenuTimeForce ){ //强制执行注册
-			target->userinformation = MenuTimeForce;
-		}
-		if( (function &(~(MenuTime | MenuTimeForce))) == 0) return;
+	if(function & MenuTime) { 
+		AddToMenuTimeList(target, ms);//时间队列
 	}
-	
-	if(SpecialFunction == NULL){
-		SpecialFunction = (TypedefSpeFor *) MenuMalloc(sizeof(TypedefSpeFor));
-		if(!SpecialFunction) return;
-		SpecialFunction->target = target;
-		SpecialFunction->function = function;
-		SpecialFunction->next = NULL;
-		SpecialFunction->TriggerFlag = function;
-	}
-	else{
-		for( ; ; ){ //找到列表尾
-			if(k->next == NULL) break;
-			k = k->next;
-		}
-		p = (TypedefSpeFor *) MenuMalloc(sizeof(TypedefSpeFor));
-		if(!p) return;
-		p->target = target; //目标菜单
-		p->function = function; // 特殊功能
-		p->next=NULL; // 时间列表下一个为空
-		p->TriggerFlag = function;
-		k->next = p; //与上一个链接
-	}
+	target->specialfeatures |= function; //特殊功能注册
 }
 
 /*
@@ -464,9 +434,9 @@ bool TriggerCheck(menu_area *target, enum SpecialInformation function)
 	bool triggerflag = 0;
 	
 	if(!target) return 0;
-	if( (target->userinformation)&function ){
+	if( (target->specfeattrigflag)&function ){
 		triggerflag = 1;
-		target->userinformation &= ~function;
+		target->specfeattrigflag &= ~function;
 	}
 	return triggerflag;
 }
@@ -485,11 +455,11 @@ MenuListOverall *MenuOverall(menu_area *target)
 	
 	p = FindMeunListHeard(target);
 	if(!p) return NULL; //未找到菜单头，跳过
-	if(p->userinformation & MenuHaveOverall) return NULL; //已有跳过
+	if(p->specialfeatures & MenuHaveOverall) return NULL; //已有跳过
 	
 	Tar = (MenuListOverall *)MenuMalloc(sizeof(MenuListOverall)); //申请空间
 	if( !(Tar) ) return NULL; //空间申请失败
-	p->userinformation |= MenuHaveOverall; //菜单头赋予属性
+	p->specialfeatures |= MenuHaveOverall; //菜单头赋予属性
 	
 	if(MenuOverallPointer==NULL){ //创建
 		MenuOverallPointer = Tar;
@@ -623,8 +593,8 @@ void MenuHeartTime(void)
 			p->menu_time->counttime++; //计时
 			if( (p->menu_time->counttime) == p->menu_time->timems){ //到达计时点
 				p->menu_time->counttime=0; //计时复位
-				p->userinformation |= MenuTime; //赋值状态
-				if( (p->userinformation)& MenuTimeForce ){ //是否强制执行
+				p->specfeattrigflag |= MenuTime; //赋值状态
+				if( (p->specialfeatures)& MenuTimeForce ){ //是否强制执行
 					if(!(p->menuinterface)){
 						p->menuinterface(p); //执行指向函数
 					}
@@ -670,67 +640,94 @@ static void MenuListInterface(void)
 
 static void SpecialFunctionRun(menu_area *target)
 {
-	menu_area *NowMenuHeart=NULL;
-	menu_area *TargetMenuHeart=NULL;
-
-	TypedefSpeFor *p = SpecialFunction;
+	static menu_area *lastmenuheard = NULL; 
+	menu_area *lastmenutail = FindMeunListTail(lastmenuheard); 
+	static menu_area *lastshowmenuheard = NULL;
+	menu_area *lastshowmenutail = MenuListShowTail(lastshowmenuheard);	
 	
-	if(target == NULL) return; //检查地址是否有效
-	if(SpecialFunction == NULL) return; //检查是否创建特殊功能
-	if(!KeyPutDownFlag) return;//使只有按键才触发检查
+	menu_area *nowmenuheard = FindMeunListHeard(target); 
+	menu_area *nowmenutail = FindMeunListTail(target);
+	menu_area *nowshowmenuheard = MenuListShowHead(target);
+	menu_area *nowshowmenutail = MenuListShowTail(target);
 	
-	NowMenuHeart = MenuListShowHead(target);
+	menu_area *p = NULL;
 	
-	for( ; ; )
-	{
-		TargetMenuHeart = MenuListShowHead(p->target);
-		
-		if( (p->function) & EnterMenu){
-				if(target == p->target){
-					if( !(p->TriggerFlag & EnterMenu) ){
-						p->target->userinformation |= EnterMenu;
-						p->TriggerFlag |= EnterMenu; //触发标志置1
-					}
-				}
-				else{
-					p->TriggerFlag &= ~EnterMenu; // 触发标志复位
+	uint8_t flag = 0;
+	
+	if(!lastmenuheard){
+		lastmenuheard = nowmenuheard;
+		lastmenutail = FindMeunListTail(lastmenuheard); 
+		lastshowmenuheard = nowshowmenuheard;
+		lastshowmenutail = MenuListShowTail(lastshowmenuheard);	
+	}
+	if(!lastmenuheard || !lastmenutail || !lastshowmenuheard || !lastshowmenutail) return;
+	
+	if( lastmenuheard != nowmenuheard){ //切换菜单级
+		for( p=lastmenuheard; ; ){ //上一级退出执行
+			if(p->specialfeatures & ExitMenu) {
+				p->specfeattrigflag |= ExitMenu;
+				p->menuinterface(p);
+			}
+			if(p==lastshowmenuheard){
+				flag = 1;
+			}
+			if(flag) {
+				if(p->specialfeatures & ExitShowMenuList) {
+					p->specfeattrigflag |= ExitShowMenuList;
+					p->menuinterface(p);
 				}
 			}
-		if( (p->function) & ExitMenu){
-				if(target != p->target){
-					if(!(p->TriggerFlag & ExitMenu)){
-						p->target->userinformation |= ExitMenu;
-						p->TriggerFlag |= ExitMenu; //触发标志置1
-					}
-				}
-				else{
-					p->TriggerFlag &= ~ExitMenu; // 触发标志复位
+			if(p == lastshowmenutail) {
+				flag = 0;
+			}
+			if(p == lastmenutail) break;
+			p = p->next;
+		}
+		for(p=nowmenuheard; ; ){//本级进入执行
+			if(p->specialfeatures & EnterMenu) {
+				p->specfeattrigflag |= EnterMenu;
+				p->menuinterface(p);
+			}
+			if(p==nowshowmenuheard){
+				flag = 1;
+			}
+			if(flag) {
+				if(p->specialfeatures & EnterShowMenuList) {
+					p->specfeattrigflag |= EnterShowMenuList;
+					p->menuinterface(p);
 				}
 			}
-		if( (p->function) & EnterShowMenuList){
-				if(NowMenuHeart == TargetMenuHeart){
-					if(!(p->TriggerFlag & EnterShowMenuList)){
-						p->target->userinformation |= EnterShowMenuList;
-						p->TriggerFlag |= EnterShowMenuList; //触发标志置1
-					}
-				}
-				else{
-					p->TriggerFlag &= ~EnterShowMenuList; // 触发标志复位
-				}
+			if(p == nowshowmenutail) {
+				flag = 0;
 			}
-		if( (p->function) & ExitShowMenuList){
-				if(NowMenuHeart != TargetMenuHeart){
-					if(!(p->TriggerFlag & ExitShowMenuList)){
-						p->target->userinformation |= ExitShowMenuList;
-						p->TriggerFlag |= ExitShowMenuList; //触发标志置1
-					}
-				}
-				else{
-					p->TriggerFlag &= ~ExitShowMenuList; // 触发标志复位
-				}
+			if(p == nowmenutail) break;
+			p = p->next;
+		}
+		lastmenuheard = nowmenuheard;
+		lastshowmenuheard = nowshowmenuheard;
+		ClearnBuff(); // 清空缓存
+		return;
+	}
+	
+	if(lastshowmenuheard != nowshowmenuheard){ //切换显示菜单
+		for(p=lastshowmenuheard; ; ) { //上一显示列表退出执行
+			if(p->specialfeatures & ExitShowMenuList) {
+				p->specfeattrigflag |= ExitShowMenuList;
+				p->menuinterface(p);
 			}
-		if(p->next == NULL) break; //特殊功能列表
-		p = p->next;
+			if(p == lastshowmenutail) break;
+			p = p->next;
+		}
+		for(p=nowshowmenuheard; ; ) { //本显示列表进入执行
+			if(p->specialfeatures & EnterShowMenuList) {
+				p->specfeattrigflag |= EnterShowMenuList;
+				p->menuinterface(p);
+			}
+			if(p == nowshowmenutail) break;
+			p = p->next;
+		}
+		lastshowmenuheard = nowshowmenuheard;
+		ClearnBuff(); // 清空缓存
 	}
 }
 
@@ -743,7 +740,7 @@ static void MenuListOverallRun(menu_area *target)
 	if(!MenuListOverallP) return; //是否有全局
 	p = FindMeunListHeard(target);
 	if(!p) return; //是否有菜单
-	if( !(p->userinformation & MenuHaveOverall) ) return; //是否创建
+	if( !(p->specialfeatures & MenuHaveOverall) ) return; //是否创建
 	
 	while(MenuListOverallP->Affiliation != p){ //找到对应列表头的全局
 		if( !(MenuListOverallP->next) ) return;
@@ -807,7 +804,6 @@ void MenuRun(void)
 		disp_flush();// 刷新屏幕
 		
 		ClearnBuff(); // 清空缓存
-		KeyPutDownFlag = 0; //按键按下标志复位
 		StatusInformation = Menu_noaction; //输入设备状态复位
 		ScreenPara.refresh=0;// 刷新标志复位
 	}

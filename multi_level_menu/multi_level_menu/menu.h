@@ -36,10 +36,10 @@ enum MenuState
 enum SpecialInformation
 {
 	MenuTime = 0x01, //时间列表
-	EnterMenu = 0x02, // 进入菜单
-	ExitMenu = 0x04,  // 退出菜单
-	EnterShowMenuList = 0x08, // 进入显示菜单列表
-	ExitShowMenuList = 0x10, // 退出显示菜单列表
+	EnterMenu = 0x02, // 进入菜单，if末尾加return
+	ExitMenu = 0x04,  // 退出菜单，if末尾加return
+	EnterShowMenuList = 0x08, // 进入显示菜单列表，if末尾加return
+	ExitShowMenuList = 0x10, // 退出显示菜单列表，if末尾加return
 	
 	/*****上述功能的改进*****/
 	
@@ -72,7 +72,8 @@ typedef struct MENU_AREA
 	struct MENU_AREA *father;   //父类
 	void (*menuinterface)(struct MENU_AREA *target); //菜单内容
 	menu_timems *menu_time;
-	uint16_t userinformation;//特殊功能标记
+	uint16_t specialfeatures;//特殊功能注册
+	uint16_t specfeattrigflag; //特殊功能触发标记
 }menu_area;
 
 //列表全局队列
@@ -82,15 +83,6 @@ typedef struct MENULISTOVERALL
 	void (*menuinterface)(void); //菜单内容
 	struct MENULISTOVERALL *next;
 }MenuListOverall;
-
-//特殊功能队列
-typedef struct SPECIALNFORMATION
-{
-	menu_area *target; //菜单
-	struct SPECIALNFORMATION *next; //
-	uint16_t function; //特殊功能类型
-	uint16_t TriggerFlag;
-}TypedefSpeFor;
 
 
 
@@ -131,7 +123,7 @@ void MakeMenuListRing(menu_area *target);
 MenuListOverall *MenuOverall(menu_area *target);
 
 //功能：特殊功能注册
-//注意：该功能会占用userinformation，使用该功能的菜单不要手动修改userinformation
+//注意：该功能会占用specialfeatures，使用该功能的菜单不要手动修改specialfeatures
 void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms);
 
 //功能：特殊功能检查，触发返回1，否则返回0

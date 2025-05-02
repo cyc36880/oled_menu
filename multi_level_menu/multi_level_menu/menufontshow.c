@@ -18,7 +18,7 @@ extern const unsigned char HZK16x16[][16];
 	x,y：在目标菜单的相对偏移
 	asc：一个ASCII字符
 */
-void MenuShowAsc(menu_area *target,const uint8_t *font,const uint8_t *font_SizeInf, uint8_t x, uint8_t y, uint8_t asc)
+void MenuShowAsc(menu_area *target,const uint8_t *font,const uint8_t *font_SizeInf, int16_t x, int16_t y, uint8_t asc)
 {
 	uint8_t c=0;
 	uint8_t h,w;
@@ -58,7 +58,7 @@ static uint32_t oled_pow(uint8_t m,uint8_t n)
 	len：数字长度
 	num：数字
 */
-void MenuShowNum(menu_area *target, const uint8_t *font, const uint8_t *font_SizeInf, uint8_t x, uint8_t y, uint8_t len, uint32_t num)
+void MenuShowNum(menu_area *target, const uint8_t *font, const uint8_t *font_SizeInf, int16_t x, int16_t y, uint8_t len, uint32_t num)
 {         	
 	uint8_t t,temp;
 	uint8_t enshow=0;	
@@ -86,7 +86,7 @@ void MenuShowNum(menu_area *target, const uint8_t *font, const uint8_t *font_Siz
 	x,y：在目标菜单的相对偏移
 	str：一个ASCII字符串
 */
-void MenuShowAscStr(menu_area *target, const uint8_t *font, const uint8_t *font_SizeInf, uint8_t x, uint8_t y, uint8_t *str)
+void MenuShowAscStr(menu_area *target, const uint8_t *font, const uint8_t *font_SizeInf, int16_t x, int16_t y, uint8_t *str)
 {
 	while(*str != '\0')
 	{
@@ -180,7 +180,7 @@ static unsigned char StrIfHaveStr(const uint8_t *formfind, uint8_t *find, unsign
 	return 0;
 }
 // 汉字显示，target为NULL在屏幕写
-void MenuHZ16x16Str(menu_area *target, uint8_t x, uint8_t y, uint8_t *s_dat)
+static void MenuHZ16x16Str(menu_area *target, int16_t x, int16_t y, uint8_t *s_dat)
 {
 	unsigned char i0=0, s_datlen = HZStrLen(s_dat);
 	unsigned char j0=0;
@@ -207,7 +207,7 @@ void MenuHZ16x16Str(menu_area *target, uint8_t x, uint8_t y, uint8_t *s_dat)
 	}
 }
 // 汉字 Asc 混合显示，target为NULL在屏幕写
-void MenuHzAndAsc(menu_area *target, uint8_t x, uint8_t y, uint8_t *s_dat)
+void MenuHzAndAsc(menu_area *target, int16_t x, int16_t y, uint8_t *s_dat)
 {
 	unsigned int s_datlen = mystrlen(s_dat);
 	unsigned int i=0;

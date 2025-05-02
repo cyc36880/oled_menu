@@ -4,6 +4,7 @@
 
 // ================================= 设 备 ========================================
 
+static bool KeyPutDownFlag = 0; // 按键按下标志 （使只有按键才触发检查）
 enum MenuState StatusInformation; //输入设备状态
 
 /*
@@ -13,7 +14,7 @@ enum MenuState StatusInformation; //输入设备状态
 enum MenuState Scan(void)
 {
 	if(HAL_GPIO_ReadPin(K0_GPIO_Port, K0_Pin) == GPIO_PIN_RESET) return Menu_down;
-	else if(HAL_GPIO_ReadPin(K1_GPIO_Port, K1_Pin) == GPIO_PIN_RESET) return Menu_confirm;
+	else if(HAL_GPIO_ReadPin(K1_GPIO_Port, K1_Pin) == GPIO_PIN_RESET) return Menu_Sub;
 	return Menu_noaction;
 }
 
@@ -46,6 +47,7 @@ static void EquipmentState(void)
 	if(KeyState(&StatusInformation)){ //按键扫描
 		if(StatusInformation != Menu_noaction){ //非空闲
 			ScreenPara.refresh = 1;
+			KeyPutDownFlag = 1; //按键按下标志置1
 		}
 	}
 }
@@ -166,7 +168,7 @@ menu_area * MenuListAddressing(menu_area *target, bool upordown, uint16_t offset
  * 功能：对菜单头的前后偏移寻址 
  * target：目标寻址菜单 
  * offset：偏移步数 
- * upordown: 0向下偏移 1向上偏移 
+ * upordown: 0向后偏移 1向前偏移 
  * 返回值：相对与源地址偏移后的地址，offset=0返回源地址，无则返回NULL 
  **/
 menu_area * MenuHeadAddressing(menu_area *target,  bool upordown, uint16_t offset)
@@ -282,6 +284,45 @@ menu_area *FindMeunListTail(menu_area *target)
 	return tail;
 }
 
+/*
+	功能：返回当前显示列表的头，即使它不能被选中
+	target：列表的任一菜单指针
+	返回值：target为空返回空，其余返回显示菜单头
+*/
+menu_area *MenuListShowHead(menu_area *target)
+{
+	menu_area *targetmenu = target;
+	
+	if(targetmenu == NULL) return NULL;
+	
+	for( ; ; )
+	{
+		if(targetmenu->previous == NULL) return targetmenu; //上一个不存在
+		if(targetmenu->id == MENUHEARDID) return targetmenu;//上一个为头
+		if(targetmenu->previous->menulistend == 1) return targetmenu; //上一个为结尾
+		targetmenu = targetmenu->previous;
+	}
+}
+
+/*
+	功能：返回当前显示列表的尾，即使它不能被选中
+	target：列表的任一菜单指针
+	返回值：target为空返回NULL，其余返回显示菜单尾
+*/
+menu_area *MenuListShowTail(menu_area *target)
+{
+	menu_area *targetmenu = target;
+	
+	if(targetmenu == NULL) return NULL;
+	
+	for( ; ; )
+	{
+		if(targetmenu->next == NULL) return targetmenu; //下一个为空
+		if(targetmenu->next->id == MENUHEARDID) return targetmenu;//到达菜单列表尾
+		if(targetmenu->menulistend == 1) return targetmenu;//显示菜单尾
+		targetmenu = targetmenu->next;
+	}
+}
 
 /*
 	功能： 目标菜单首位相连，地址为空跳过 
@@ -315,7 +356,7 @@ static menu_timems *MenuTimeList = NULL;
 	注意：该函数将占用 userinformation，执行指定列表时，会将 userinformation 置 1， 
 		  用于判断是不是时间列表函数执行的该函数
 */
-void AddToMenuTimeList(menu_area *target, uint16_t ms)
+static void AddToMenuTimeList(menu_area *target, uint16_t ms)
 {
 	menu_timems *p;
 	menu_timems *k = MenuTimeList;
@@ -344,6 +385,69 @@ void AddToMenuTimeList(menu_area *target, uint16_t ms)
 }
 
 
+
+
+// ====================== 特 殊 功 能 ========================
+
+static struct SPECIALNFORMATION *SpecialFunction = NULL;
+
+/*
+	功能：特殊功能注册
+	target：要注册的菜单
+	function：特殊功能表里的指针，可与
+	ms；延时时间，含MenuTime时，ms为延时，不含时，ms不被使用，一般填NULL
+	注意：除时间列表外的其它特殊功能为后来添加，嵌套使用，其它特殊功能可能存在bug
+*/
+void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms)
+{
+	TypedefSpeFor *p;
+	TypedefSpeFor *k = SpecialFunction;
+	
+	if(target == NULL) return;
+	
+	if(function & MenuTime) { //时间队列
+		AddToMenuTimeList(target, ms);
+		
+		if( (function &(~MenuTime)) == 0) return;
+	}
+	
+	if(SpecialFunction == NULL){
+		SpecialFunction = (TypedefSpeFor *) malloc(sizeof(TypedefSpeFor));
+		SpecialFunction->target = target;
+		SpecialFunction->function = function;
+		SpecialFunction->next = NULL;
+		SpecialFunction->TriggerFlag = function;
+	}
+	else{
+		for( ; ; ){ //找到列表尾
+			if(k->next == NULL) break;
+			k = k->next;
+		}
+		p = (TypedefSpeFor *) malloc(sizeof(TypedefSpeFor));
+		p->target = target; //目标菜单
+		p->function = function; // 特殊功能
+		p->next=NULL; // 时间列表下一个为空
+		p->TriggerFlag = function;
+		k->next = p; //与上一个链接
+	}
+}
+
+/*
+	功能：特殊功能检查，触发返回1，否则返回0
+	target：想要检查的菜单
+	function：想要检查的特殊功能
+*/
+bool TriggerCheck(menu_area *target, enum SpecialInformation function)
+{
+	bool triggerflag = 0;
+	
+	if( (target->userinformation)&function ){
+		triggerflag = 1;
+		target->userinformation &= ~function;
+	}
+	return triggerflag;
+}
+
 // ========================== 图 形 化 =======================
 
 /*
@@ -356,11 +460,10 @@ void MenuSetPoint(menu_area *target, int16_t x, int16_t y, bool w_b)
 {
 	int16_t px=0, py=0; // 屏幕相对位置
 	
+	if(target == NULL) return;
+	
 	px = target->x + x;
 	py = target->y + y;
-	
-	if(px>=SCREENWIDTH || py>= SCREENHIGH) return; //判断是否超出屏幕边界
-	if(px<0 || py<0) return;
 	
 	if(x>target->width || y>target->high) return; // 判断是否超出菜单边界
 	if(x<0 || y<0) return;
@@ -372,21 +475,23 @@ void MenuSetPoint(menu_area *target, int16_t x, int16_t y, bool w_b)
 	功能：画目标菜单的矩形，空指针不画
 	target: 目标菜单
 */
-void DrawMenuRectangle(menu_area *target)
+static void DrawMenuRectangle(menu_area *target)
 {
 	uint16_t x1=0, y1=0, x2=0, y2=0;
 	
 	if(target == NULL) return;
 	
+	if(target->width<=0 || target->high<=0) return;
+	
 	x1 = target->x;
 	y1 = target->y;
-	x2 = x1 + target->width;
-	y2 = y1 + target->high;
+	x2 = x1 + target->width-1;
+	y2 = y1 + target->high-1;
 	
-	LCD_DrawLine(x1, y1, x2, y1);
-	LCD_DrawLine(x1, y1, x1, y2);
-	LCD_DrawLine(x2, y2, x1, y2);
-	LCD_DrawLine(x2, y2, x2, y1);
+	DrawLine(x1, y1, x2, y1);
+	DrawLine(x1, y1, x1, y2);
+	DrawLine(x2, y2, x1, y2);
+	DrawLine(x2, y2, x2, y1);
 }
 
 
@@ -398,51 +503,63 @@ void DrawMenuRectangle(menu_area *target)
 menu_area * TargetMenu = NULL; // 实时目标菜单
 
 
-
 /*
 	功能：菜单心跳执行，每1ms执行该函数
 */
+/*
+	菜单心跳开始标志
+	如果没有使用特殊功能中的时间列表功能，此标志不必管
+	注意：请在菜单初始化的结尾置一该标志，防止中断与main同时调用相关函数
+*/
+bool MenuHeartTimeStart = 0; //时间列表开始标志
+
+
 void MenuHeartTime(void)
 {
 	menu_timems *p = MenuTimeList; //时间列表
 	menu_area *Targetp = NULL; //菜单
 	menu_area *Targetph = TargetMenu; //菜单
+	menu_area *MenuShowTail = NULL; //显示菜单尾
+	
+	bool refreshflag = 0; //屏幕刷新标志，0不刷新，1刷新
+	
+	if(!MenuHeartTimeStart) return;
 	
 	if(Targetph==NULL) return; //检查地址是否有效
 	if(p == NULL) return; //检查是否创建时间列表
-	
 	if(StatusInformation != Menu_noaction) return; // 判断按键是否处于释放状态
 	if(ScreenPara.refresh==1) return;  // 判断屏幕刷新是否处于释放状态
+		
+	ScreenPara.refresh=1; //屏幕刷新，也用于防冲撞
 	
-	for( ; ; ) // 找到开始显示的头
-	{
-		if(Targetph->id == MENUHEARDID) break; //检查当前是否为标准菜单头
-		if(Targetph->previous == NULL) break; // 检查上一个菜单是否存在
-		if(Targetph->previous->menulistend) break; // 检查本列表上一界面是否为结尾
-		Targetph = Targetph->previous;
-	}
+	Targetph = MenuListShowHead(Targetph);// 找到开始显示的头
+	MenuShowTail = MenuListShowTail(Targetph);//显示菜单尾
 	
 	for( ; ; )
 	{
 		Targetp = Targetph;
-		if(FindMeunListHeard(p->target) != FindMeunListHeard(TargetMenu)) goto loop; //判断是否处于同一菜单列表
+		if(MenuListShowHead(p->target) != MenuListShowHead(TargetMenu)) goto loop; //判断是否处于同一显示菜单列表
 		for( ; ; ) // 是否在显示页面中
 		{
-			if(Targetp->id == p->target->id) break; // 在该页面
+			if(Targetp == p->target) break; // 在该页面
 			
-			if(Targetp->next==NULL) goto loop; //到达列表底部
-			if(Targetp->menulistend) goto loop;
-			if(Targetp->next->id==MENUHEARDID) goto loop;
+			if(Targetp==MenuShowTail) goto loop; //到达显示菜单列表底部
 			Targetp = Targetp->next;
 		}
 		if(++(p->counttime) >= p->timems){
 			p->counttime=0;
-			p->target->userinformation = 1;
-			(p->target->menuinterface)(p->target); //执行相关函数
-			ScreenPara.refresh=1;
+			p->target->userinformation |= MenuTime;
+//			(p->target->menuinterface)(p->target); //执行指向函数
+			// 打开上面注释后，记的在TriggerCheck if判断MenuTime(时间列表)结尾处加return
+			refreshflag = 1;
 		}
 		loop:; // 不在该页面
-		if(p->next == NULL) return;
+		if(p->next == NULL) { //到达时间列表尾部
+			if( !refreshflag ){
+				ScreenPara.refresh = 0; 
+			}
+			return;
+		}
 		p = p->next;
 	}
 }
@@ -479,6 +596,78 @@ static void MenuListInterface(void)
 }
 
 
+
+/*
+	功能：特殊功能运行
+	target： 实时目标菜单指针
+*/
+
+static void SpecialFunctionRun(menu_area *target)
+{
+	menu_area *NowMenuHeart=NULL;
+	menu_area *TargetMenuHeart=NULL;
+
+	TypedefSpeFor *p = SpecialFunction;
+	
+	if(target == NULL) return; //检查地址是否有效
+	if(SpecialFunction == NULL) return; //检查是否创建特殊功能
+	if(!KeyPutDownFlag) return;//使只有按键才触发检查
+	
+	NowMenuHeart = MenuListShowHead(target);
+	
+	for( ; ; )
+	{
+		TargetMenuHeart = MenuListShowHead(p->target);
+		
+		if( (p->function) & EnterMenu){
+				if(target == p->target){
+					if( !(p->TriggerFlag & EnterMenu) ){
+						p->target->userinformation |= EnterMenu;
+						p->TriggerFlag |= EnterMenu; //触发标志置1
+					}
+				}
+				else{
+					p->TriggerFlag &= ~EnterMenu; // 触发标志复位
+				}
+			}
+		if( (p->function) & ExitMenu){
+				if(target != p->target){
+					if(!(p->TriggerFlag & ExitMenu)){
+						p->target->userinformation |= ExitMenu;
+						p->TriggerFlag |= ExitMenu; //触发标志置1
+					}
+				}
+				else{
+					p->TriggerFlag &= ~ExitMenu; // 触发标志复位
+				}
+			}
+		if( (p->function) & EnterShowMenuList){
+				if(NowMenuHeart == TargetMenuHeart){
+					if(!(p->TriggerFlag & EnterShowMenuList)){
+						p->target->userinformation |= EnterShowMenuList;
+						p->TriggerFlag |= EnterShowMenuList; //触发标志置1
+					}
+				}
+				else{
+					p->TriggerFlag &= ~EnterShowMenuList; // 触发标志复位
+				}
+			}
+		if( (p->function) & ExitShowMenuList){
+				if(NowMenuHeart != TargetMenuHeart){
+					if(!(p->TriggerFlag & ExitShowMenuList)){
+						p->target->userinformation |= ExitShowMenuList;
+						p->TriggerFlag |= ExitShowMenuList; //触发标志置1
+					}
+				}
+				else{
+					p->TriggerFlag &= ~ExitShowMenuList; // 触发标志复位
+				}
+			}
+		if(p->next == NULL) break; //特殊功能列表
+		p = p->next;
+	}
+}
+
 /*
 	功能：设备输入状态改变实时目标菜单指针
 */
@@ -488,9 +677,13 @@ static void StateToPointer(void)
 	{
 		case Menu_up: 		TargetMenu=NextCancheMenuList(TargetMenu, -1);break;
 		case Menu_down: 	TargetMenu=NextCancheMenuList(TargetMenu,  1);break;
-		case Menu_confirm:  
+		case Menu_Sub:  
 			if(TargetMenu->subclass != NULL) StatusInformation = Menu_noaction; // 防止切换菜单列表时立即运行函数内部指令
 			TargetMenu=NextCancheMenuHeard(TargetMenu, 1);
+			break;
+		case Menu_Father:  
+			if(TargetMenu->father != NULL) StatusInformation = Menu_noaction; // 防止切换菜单列表时立即运行函数内部指令
+			TargetMenu=NextCancheMenuHeard(TargetMenu, -1);
 			break;
 		default:break;
 	}
@@ -516,13 +709,16 @@ void MenuRun(void)
 	if(ScreenPara.refresh)
 	{
 		StateToPointer(); // 设备输入状态改变实时目标菜单指针
+		
+		SpecialFunctionRun(TargetMenu); //特殊功能运行
 		MenuListInterface(); //依次显示当前菜单列表
 		MenuCheckedStyle(TargetMenu);//菜单选中风格
 		disp_flush();// 刷新屏幕//the end
 		ClearnBuff(); // 清空缓存
 		
-		ScreenPara.refresh=0;// 刷新标志复位
+		KeyPutDownFlag = 0; //按键按下标志复位
 		StatusInformation = Menu_noaction; //输入设备状态复位
+		ScreenPara.refresh=0;// 刷新标志复位
 	}
 }
 

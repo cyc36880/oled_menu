@@ -1,10 +1,25 @@
 #ifndef _MENU_H_
 #define _MENU_H_
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdio.h>
+#include <stdint.h>  //uint16_t 等所在地
+#include <stdlib.h>  //malloc   所在地
+#include <stdbool.h> //bool     类型所在地
+
+
+/*
+特别注意：
+
+	在中断中：
+		以下函数如要使用，请先仿照 MenuHeartTime() 函数对ScreenPara.refresh进行判断，
+		确认处在释放状态后，先将该值置1，再使用以下函数。如不释放，屏幕将刷新
+	在函数中：
+		以下函数如要使用，需要先将ScreenPara.refresh置1，无需判断，再使用以下函数。如不释放，屏幕将刷新
+		
+	每个函数详细的注意事项以及返回值和功能等，请跳转该函数上部查看
+	
+	该菜单使用malloc申请空间，无free，注意内存溢出。菜单创建大小为38字节，菜单时间队列12字节，
+	特殊功能12字节，请确保heap(堆)大小足够
+*/
 
 // ================================ 菜 单 ==============================
 
@@ -16,8 +31,21 @@ enum MenuState
 	Menu_noaction=0, // 无操作
 	Menu_up,  		 // 向上
 	Menu_down, 		 // 向下
+	Menu_Sub,        // 子类
+	Menu_Father,     // 父类
 	Menu_confirm 	 // 确认
 };
+
+// 用户特殊信息
+enum SpecialInformation
+{
+	MenuTime = 0x01, //时间列表
+	EnterMenu = 0x02, // 进入菜单
+	ExitMenu = 0x04,  // 退出菜单
+	EnterShowMenuList = 0x08, // 进入显示菜单列表
+	ExitShowMenuList = 0x10, // 退出显示菜单列表
+};
+
 
 //菜单参数
 typedef struct MENU_AREA
@@ -46,6 +74,16 @@ typedef struct MENU_TIMEMS
 	struct MENU_TIMEMS *next;
 }menu_timems;
 
+//特殊功能队列
+typedef struct SPECIALNFORMATION
+{
+	menu_area *target; //菜单
+	struct SPECIALNFORMATION *next; //
+	uint16_t function; //特殊功能类型
+	uint16_t TriggerFlag;
+}TypedefSpeFor;
+
+
 
 //功能：注册或添加菜单 
 menu_area *AddToMenuList(uint16_t x, uint16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer);
@@ -71,11 +109,23 @@ menu_area *FindMeunListHeard(menu_area *target);
 //功能：找到菜单所在菜单列表的菜单尾，空指针NULL
 menu_area *FindMeunListTail(menu_area *target);
 
+//功能：返回当前显示列表的头，即使它不能被选中
+menu_area *MenuListShowHead(menu_area *target);
+
+//功能：返回当前显示列表的尾，即使它不能被选中
+menu_area *MenuListShowTail(menu_area *target);
+
 //功能：目标菜单首位相连，空指针跳过
 void MakeMenuListRing(menu_area *target);
 
-//功能：将菜单添加入时间列表，在该界面下，每ms执行指定菜单 注意：该函数将占用 userinformation
-void AddToMenuTimeList(menu_area *target, uint16_t ms);
+
+
+//功能：特殊功能注册
+//注意：该功能会占用userinformation，使用该功能的菜单不要手动修改userinformation
+void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms);
+
+//功能：特殊功能检查，触发返回1，否则返回0
+bool TriggerCheck(menu_area *target, enum SpecialInformation function);
 
 
 // =========================== 屏 幕 ====================================
@@ -102,17 +152,16 @@ extern enum MenuState StatusInformation; //输入设备状态
 // 功能：在目标菜单的相对位置画点
 void MenuSetPoint(menu_area *target, int16_t x, int16_t y, bool w_b); 
 
-//功能：画目标菜单的矩形，空指针不画
-void DrawMenuRectangle(menu_area *target);
 
 
+// ============================== 其 它 ==================================
 
-// ---------------------------------
-
-// 功能：菜单运行函数
+// 功能：菜单运行函数，为保证正常运行，该函数在while中每秒循环次数应大于2000次
 void MenuRun(void); 
 // 功能：菜单心跳执行，每1ms执行该函数
 void MenuHeartTime(void);
+//菜单心跳开始标志 放在最后 置1运行
+extern bool MenuHeartTimeStart; 
 
 #endif
 

@@ -35,4 +35,3 @@ multi_level_menu\tim.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex
 multi_level_menu\tim.o: ../multi_level_menu/menu.h
 multi_level_menu\tim.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
 multi_level_menu\tim.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
-multi_level_menu\tim.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h

@@ -30,6 +30,8 @@ multi_level_menu\oled.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash
 multi_level_menu\oled.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr.h
 multi_level_menu\oled.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr_ex.h
 multi_level_menu\oled.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_spi.h
+multi_level_menu\oled.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h
+multi_level_menu\oled.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 multi_level_menu\oled.o: ../Core/Inc/spi.h
 multi_level_menu\oled.o: ..\multi_level_menu\menu.h
 multi_level_menu\oled.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h

@@ -304,6 +304,46 @@ void MakeMenuListRing(menu_area *target)
 
 
 
+// ==================== 时 间 队 列 =================
+
+static menu_timems *MenuTimeList = NULL;
+
+/*
+	功能：将菜单添加入时间列表，在该界面下，每ms执行指定菜单
+	target：指定菜单
+	ms：间隔时间
+	注意：该函数将占用 userinformation，执行指定列表时，会将 userinformation 置 1， 
+		  用于判断是不是时间列表函数执行的该函数
+*/
+void AddToMenuTimeList(menu_area *target, uint16_t ms)
+{
+	menu_timems *p;
+	menu_timems *k = MenuTimeList;
+	
+	if(target == NULL) return; // 检查地址是否有效
+	
+	if(MenuTimeList == NULL) { //第一次创建
+		MenuTimeList = (menu_timems *) malloc(sizeof(menu_timems));
+		MenuTimeList->counttime=0; //默认起始计数值
+		MenuTimeList->timems = ms; // 想要执行时间间隔
+		MenuTimeList->target = target; //目标菜单
+		MenuTimeList->next=NULL; // 时间列表下一个为空
+	}
+	else{
+		for( ; ; ){ //找到时间列表尾
+			if(k->next == NULL) break;
+			k = k->next;
+		}
+		p = (menu_timems *) malloc(sizeof(menu_timems));
+		p->counttime=0; //默认起始计数值
+		p->timems = ms; // 想要执行时间间隔
+		p->target = target; //目标菜单
+		p->next=NULL; // 时间列表下一个为空
+		k->next = p; //与上一个链接
+	}
+}
+
+
 // ========================== 图 形 化 =======================
 
 /*
@@ -357,14 +397,57 @@ void DrawMenuRectangle(menu_area *target)
 
 menu_area * TargetMenu = NULL; // 实时目标菜单
 
-/*
-	功能：
-*/
 
+
+/*
+	功能：菜单心跳执行，每1ms执行该函数
+*/
 void MenuHeartTime(void)
 {
+	menu_timems *p = MenuTimeList; //时间列表
+	menu_area *Targetp = NULL; //菜单
+	menu_area *Targetph = TargetMenu; //菜单
 	
+	if(Targetph==NULL) return; //检查地址是否有效
+	if(p == NULL) return; //检查是否创建时间列表
+	
+	if(StatusInformation != Menu_noaction) return; // 判断按键是否处于释放状态
+	if(ScreenPara.refresh==1) return;  // 判断屏幕刷新是否处于释放状态
+	
+	for( ; ; ) // 找到开始显示的头
+	{
+		if(Targetph->id == MENUHEARDID) break; //检查当前是否为标准菜单头
+		if(Targetph->previous == NULL) break; // 检查上一个菜单是否存在
+		if(Targetph->previous->menulistend) break; // 检查本列表上一界面是否为结尾
+		Targetph = Targetph->previous;
+	}
+	
+	for( ; ; )
+	{
+		Targetp = Targetph;
+		if(FindMeunListHeard(p->target) != FindMeunListHeard(TargetMenu)) goto loop; //判断是否处于同一菜单列表
+		for( ; ; ) // 是否在显示页面中
+		{
+			if(Targetp->id == p->target->id) break; // 在该页面
+			
+			if(Targetp->next==NULL) goto loop; //到达列表底部
+			if(Targetp->menulistend) goto loop;
+			if(Targetp->next->id==MENUHEARDID) goto loop;
+			Targetp = Targetp->next;
+		}
+		if(++(p->counttime) >= p->timems){
+			p->counttime=0;
+			p->target->userinformation = 1;
+			(p->target->menuinterface)(p->target); //执行相关函数
+			ScreenPara.refresh=1;
+		}
+		loop:; // 不在该页面
+		if(p->next == NULL) return;
+		p = p->next;
+	}
 }
+
+
 
 /*
 	功能：菜单列表各个菜单内容循环显示
@@ -432,13 +515,14 @@ void MenuRun(void)
 	
 	if(ScreenPara.refresh)
 	{
-		ScreenPara.refresh=0;// 刷新标志复位
-	
 		StateToPointer(); // 设备输入状态改变实时目标菜单指针
 		MenuListInterface(); //依次显示当前菜单列表
 		MenuCheckedStyle(TargetMenu);//菜单选中风格
 		disp_flush();// 刷新屏幕//the end
 		ClearnBuff(); // 清空缓存
+		
+		ScreenPara.refresh=0;// 刷新标志复位
+		StatusInformation = Menu_noaction; //输入设备状态复位
 	}
 }
 

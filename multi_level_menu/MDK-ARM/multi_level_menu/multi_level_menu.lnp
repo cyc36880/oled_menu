@@ -4,6 +4,7 @@
 "multi_level_menu\gpio.o"
 "multi_level_menu\dma.o"
 "multi_level_menu\spi.o"
+"multi_level_menu\tim.o"
 "multi_level_menu\stm32f4xx_it.o"
 "multi_level_menu\stm32f4xx_hal_msp.o"
 "multi_level_menu\stm32f4xx_hal_spi.o"

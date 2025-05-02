@@ -20,6 +20,7 @@
 #include "main.h"
 #include "dma.h"
 #include "spi.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -92,11 +93,12 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_SPI1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-
+	
 	OLED_Init(); // OLED初始化
 	MakeMenuHeard(); //菜单列表初始化
-	
+	HAL_TIM_Base_Start_IT(&htim2);
 	
   /* USER CODE END 2 */
 
@@ -106,11 +108,9 @@ int main(void)
   {
     /* USER CODE END WHILE */
 
-	  
-	  
-	  MenuRun();// 功能：菜单运行函数
-	  HAL_Delay(10);
     /* USER CODE BEGIN 3 */
+	  
+	  MenuRun();
   }
   /* USER CODE END 3 */
 }

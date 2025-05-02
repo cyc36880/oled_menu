@@ -37,7 +37,14 @@ typedef struct MENU_AREA
 	uint16_t userinformation;//用户自定义信息
 }menu_area;
 
-
+//菜单时间队列
+typedef struct MENU_TIMEMS
+{
+	uint16_t counttime;
+	uint16_t timems;
+	menu_area *target;
+	struct MENU_TIMEMS *next;
+}menu_timems;
 
 
 //功能：注册或添加菜单 
@@ -67,8 +74,8 @@ menu_area *FindMeunListTail(menu_area *target);
 //功能：目标菜单首位相连，空指针跳过
 void MakeMenuListRing(menu_area *target);
 
-
-
+//功能：将菜单添加入时间列表，在该界面下，每ms执行指定菜单 注意：该函数将占用 userinformation
+void AddToMenuTimeList(menu_area *target, uint16_t ms);
 
 
 // =========================== 屏 幕 ====================================
@@ -100,10 +107,12 @@ void DrawMenuRectangle(menu_area *target);
 
 
 
+// ---------------------------------
+
 // 功能：菜单运行函数
 void MenuRun(void); 
-
-
+// 功能：菜单心跳执行，每1ms执行该函数
+void MenuHeartTime(void);
 
 #endif
 

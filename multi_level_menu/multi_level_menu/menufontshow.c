@@ -190,7 +190,9 @@ void MenuHZ16x16Str(menu_area *target, uint8_t x, uint8_t y, uint8_t *s_dat)
 	for(i0=0; i0<s_datlen; i0++)
 	{
 		j0=StrIfHaveStr(HZK16x16index, s_dat, i0);
-		if(j0 == 0) continue; // 没有找到
+		if(j0 == 0) {
+			continue; // 没有找到
+		}
 
 		for(j=0; j<16; j++)
 		{

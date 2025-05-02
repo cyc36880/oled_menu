@@ -61,8 +61,8 @@ typedef struct MENU_AREA
 {
 	int16_t x;
 	int16_t y;
-	int16_t width;
-	int16_t high;
+	uint16_t width;
+	uint16_t high;
 	uint16_t id; //菜单ID，不要修改
 	bool checked; //能否被选中 
 	bool menulistend; //菜单列表结束
@@ -87,7 +87,7 @@ typedef struct MENULISTOVERALL
 
 
 //功能：注册或添加菜单 
-menu_area *AddToMenuList(uint16_t x, uint16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer);
+menu_area *AddToMenuList(int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer);
 
 //功能：链接到父类
 void LinkToParentClass(menu_area *target, menu_area *source);

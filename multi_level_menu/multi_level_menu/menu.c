@@ -126,7 +126,7 @@ void *MenuMalloc(uint16_t size)
 *	checked: 能否被选中，1能 0否 
 *	transfer：为 NULL 注册的是菜单头，填入菜单地址为其尾加入 
 */
-menu_area * AddToMenuList(uint16_t x, uint16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer)
+menu_area * AddToMenuList(int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer)
 {
 	menu_area *p;
 	menu_area *k;
@@ -145,11 +145,11 @@ menu_area * AddToMenuList(uint16_t x, uint16_t y, uint16_t width, uint16_t high,
 		p->id = MENUHEARDID; // 菜单头ID 
 		p->previous = NULL; //上一个
 	}
-	
-	p->x = x>=BUFFWEIGH ? BUFFWEIGH-1 : x;
-	p->y = y>=SCREENHIGH ? SCREENHIGH-1 : y;
-	p->width = width+p->x>BUFFWEIGH ? BUFFWEIGH-p->x : width;
-	p->high = high+p->y>SCREENHIGH ? SCREENHIGH-p->y : high;
+
+	p->x = x;
+	p->y = y;
+	p->width = width;
+	p->high = high;
 	p->checked =  checked; // 能否选中 
 	p->menulistend = NULL; //菜单列表结束
 	p->next = NULL;      //下一个

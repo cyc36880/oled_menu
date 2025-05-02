@@ -1,15 +1,17 @@
 #include "menufontshow.h"
 #include "Graphicalfunctions.h"
 #include "menu.h"
+#include "oledfont.h"
 
-extern const unsigned char F8X16_SizeInf[2]; //下面字符编码的尺寸信息 宽x高
-//阴码 列行式 逆向
-extern const unsigned char F8X16[];
-//汉字库索引
-extern const unsigned char HZK16x16index[];
+static const uint8_t *font = F8X16;
+static const uint8_t *font_SizeInf = F8X16_SizeInf;
 
-//汉字库 阴码 行列式 逆向 16x16
-extern const unsigned char HZK16x16[][16];
+//设置英文显示字体
+void SetFont(const uint8_t *xfont,const uint8_t *xfont_SizeInf)
+{
+	font = xfont;
+	font_SizeInf = xfont_SizeInf;
+}
 
 /*
 	功能：在菜单中写Asc字符，target为NULL在屏幕写
@@ -19,7 +21,7 @@ extern const unsigned char HZK16x16[][16];
 	x,y：在目标菜单的相对偏移
 	asc：一个ASCII字符
 */
-void MenuShowAsc(menu_area *target,const uint8_t *font,const uint8_t *font_SizeInf, int16_t x, int16_t y, uint8_t asc)
+void MenuShowAsc(menu_area *target,int16_t x, int16_t y, uint8_t asc)
 {
 	uint8_t c=0;
 	uint8_t h,w;
@@ -27,8 +29,8 @@ void MenuShowAsc(menu_area *target,const uint8_t *font,const uint8_t *font_SizeI
 	uint8_t wight = font_SizeInf[0];
 	uint8_t high  = font_SizeInf[1];
 	
+	if(asc > '~' || asc < ' ') asc = ' '; //大于显示范围
 	c=asc-' ';   // ' '=32,ASCII码表
-	
 	for(h=0; h<high; h++)//字高
 	{
 		for(w=0; w<wight; w++) //字宽
@@ -59,7 +61,7 @@ static uint32_t oled_pow(uint8_t m,uint8_t n)
 	len：数字长度
 	num：数字
 */
-void MenuShowNum(menu_area *target, const uint8_t *font, const uint8_t *font_SizeInf, int16_t x, int16_t y, uint8_t len, uint32_t num)
+void MenuShowNum(menu_area *target, int16_t x, int16_t y, uint8_t len, uint32_t num)
 {         	
 	uint8_t t,temp;
 	uint8_t enshow=0;	
@@ -71,11 +73,11 @@ void MenuShowNum(menu_area *target, const uint8_t *font, const uint8_t *font_Siz
 		{
 			if(temp==0)
 			{
-				MenuShowAsc(target, font, font_SizeInf, x+font_SizeInf[0]*t, y, ' ');
+				MenuShowAsc(target, x+font_SizeInf[0]*t, y, ' ');
 				continue;
 			}else enshow=1; 
 		}
-		MenuShowAsc(target, font, font_SizeInf, x+font_SizeInf[0]*t, y, temp+'0');
+		MenuShowAsc(target, x+font_SizeInf[0]*t, y, temp+'0');
 	}
 } 
 
@@ -87,11 +89,11 @@ void MenuShowNum(menu_area *target, const uint8_t *font, const uint8_t *font_Siz
 	x,y：在目标菜单的相对偏移
 	str：一个ASCII字符串
 */
-void MenuShowAscStr(menu_area *target, const uint8_t *font, const uint8_t *font_SizeInf, int16_t x, int16_t y, uint8_t *str)
+void MenuShowAscStr(menu_area *target, int16_t x, int16_t y, uint8_t *str)
 {
 	while(*str != '\0')
 	{
-		MenuShowAsc(target, font, font_SizeInf, x, y, *str);
+		MenuShowAsc(target, x, y, *str);
 		str++;
 		x+=font_SizeInf[0];
 	}
@@ -195,9 +197,9 @@ static void MenuHZ16x16Str(menu_area *target, int16_t x, int16_t y, uint8_t *s_d
 			continue; // 没有找到
 		}
 
-		for(j=0; j<16; j++)
+		for(j=0; j<16; j++) //高度
 		{
-			for(i=0; i<16; i++)
+			for(i=0; i<16; i++) //宽度
 			{
 				if((HZK16x16[(j0-1)*2 + j/8][i]) & (0x01<<(j%8))){
 					if(target == NULL) write_point(x+i, y+j, 1);
@@ -226,8 +228,8 @@ void MenuHzAndAsc(menu_area *target, int16_t x, int16_t y, uint8_t *s_dat)
 		}
 		else   //Asc 
 		{
-			MenuShowAsc(target, F8X16, F8X16_SizeInf, x, y, s_dat[i]);
-			x+=8; //坐标右移 由Asc宽度决定
+			MenuShowAsc(target, x, y + (16 - font_SizeInf[1]), s_dat[i]);
+			x+=font_SizeInf[0]; //坐标右移 由Asc宽度决定
 			i++;  //字符串位置标志右移，Asc固定为1
 		}
 	}

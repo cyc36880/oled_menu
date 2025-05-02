@@ -48,29 +48,39 @@ void MakeMenu(void)
 
 void test1_1(menu_area *target)
 {
+	SetFont(F8X16, F8X16_SizeInf);//设置字体
 	
 	if(TriggerCheck(target, ExitShowMenuList)) {
 //		count ++;
 		return;
 	}
-	MenuShowNum(target, F8X16, F8X16_SizeInf, 0, 0, 3, 123);
+	MenuShowNum(target, 0, 0, 3, 123);
 }
 void test1_2(menu_area *target)
 {
+	SetFont(F8X16, F8X16_SizeInf);//设置字体
+	
 	if(TriggerCheck(target, EnterShowMenuList)) {
 		count++;
 		return;
 	}
-	MenuShowNum(target, F8X16, F8X16_SizeInf, 0, 0, 3, 456);
+	MenuShowNum(target, 0, 0, 3, 456);
 }
 void test1_3(menu_area *target)
 {
+	SetFont(F8X16, F8X16_SizeInf);//设置字体
+	
 	MenuHzAndAsc(target, 0, 0, "3");
 }
 void test4(void)
 {
-
-	MenuShowNum(NULL, F8X16, F8X16_SizeInf, 0, 0, 3, count);
+	SetFont(F6X8, F6X8_SizeInf);//设置字体
+	MenuShowAscStr(NULL, 0, 32, "asd123~{|}");
+//	SetFont(F8X16, F8X16_SizeInf);//设置字体
+//	MenuShowAscStr(NULL, 0, 42, "asd123~{|}");
+	MenuHzAndAsc(NULL, 0, 42, "3滋生1");
+	
+	MenuShowNum(NULL, 0, 0, 3, count);
 }
 
 

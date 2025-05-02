@@ -211,10 +211,10 @@ menu_area * AddToMenuList(int16_t x, int16_t y, uint16_t width, uint16_t high, b
 	功能：快速目标菜单下方仿制
 	target：要仿制的目标菜单
 	source：拥有的菜单
-	kind：类型 0:有超出部分立即按照头创建 1:只有完全在屏幕下方才按头创建
+	kind：类型 0:有超出部分立即按照头创建 1:只有完全在屏幕下方才按头创建 2:仅在最后下方仿造
 */
 
-menu_area * FastSimilarMenu(menu_area *target, menu_area *source, bool kind)
+menu_area * FastSimilarMenu(menu_area *target, menu_area *source, uint8_t kind)
 {
 	if(!source) return NULL;
 	if(!target) {
@@ -223,7 +223,7 @@ menu_area * FastSimilarMenu(menu_area *target, menu_area *source, bool kind)
 	target = FindMeunListHeard(target);
 	menu_area *p = FindMeunListTail(target); 
 	
-	if(!kind) { //超出屏幕，立即
+	if(kind == 0)  { //超出屏幕，立即
 		if(p->y+p->high*2 > SCREENHIGH) {
 			p->menulistend = ENABLE;
 			return SetMenu(source, target->x, target->y, target->width,target->high, target->checked, p);
@@ -232,7 +232,7 @@ menu_area * FastSimilarMenu(menu_area *target, menu_area *source, bool kind)
 			return SetMenu(source, p->x, p->y+p->high, p->width,p->high, p->checked, p);
 		}
 	}
-	else {
+	else if(kind == 1){
 		if(p->y+p->high >= SCREENHIGH) {
 			p->menulistend = ENABLE;
 			return SetMenu(source, target->x, target->y, target->width,target->high, target->checked, p);
@@ -240,6 +240,9 @@ menu_area * FastSimilarMenu(menu_area *target, menu_area *source, bool kind)
 		else {
 			return SetMenu(source, p->x, p->y+p->high, p->width,p->high, p->checked, p);
 		}
+	}
+	else {
+		return SetMenu(source, p->x, p->y+p->high, p->width,p->high, p->checked, p);
 	}
 }
 
@@ -466,7 +469,14 @@ void MakeMenuListRing(menu_area *target)
 }
 
 
+
+
+
+
+
+
 // ==================== 时 间 队 列 =================
+
 
 /*
 	功能：将菜单添加入时间列表，在该界面下，每ms执行指定菜单
@@ -486,7 +496,13 @@ static void AddToMenuTimeList(menu_area *target, uint16_t ms)
 }
 
 
+
+
+
+
+
 // ====================== 特 殊 功 能 ========================
+
 
 /*
 	功能：特殊功能注册
@@ -558,6 +574,84 @@ MenuListOverall *MenuOverall(menu_area *target)
 	
 	return Tar;
 }
+
+
+
+
+
+// ======================== 滚 动 显 示 ========================
+
+/*
+	功能：对 菜单列表 的y坐标+值
+	target：当前所处的仍一菜单指针
+	showSY：列表允许显示的起始y坐标
+	showEY：列表允许显示的结束y坐标
+	y_dat：增加值
+	@ret：NUL
+*/
+static void ChangeMenuY(menu_area *target, int16_t showSY, int16_t showEY, int16_t y_dat)
+{
+	menu_area *heard = NULL;
+	menu_area *tail = NULL;
+	
+	if(!target) return;
+	
+	heard = FindMeunListHeard(target);
+	tail = FindMeunListTail(target);
+	
+	for( ; ;) {
+		heard->y += y_dat;
+		if( heard->y < showSY  || (heard->y + heard->high) >= showEY || (heard->next ? heard->next->y + heard->next->high + y_dat > showEY : 0)) {
+			heard->menulistend = ENABLE;
+		}
+		else{
+			heard->menulistend = DISABLE;
+		}
+		if(heard == tail) break;
+		heard = heard->next;
+	}
+}
+
+/*
+	功能：滚动显示
+	target：当前所处的任一菜单指针
+	showSY：列表允许显示的起始y坐标 头坐标
+	showEY：列表允许显示的结束y坐标 底坐标
+	TarSY： 指针允许的起始y坐标     头坐标 应 >= showSY
+	TarEY： 指针允许的结束y坐标     底坐标 应 <= showEY
+	@ret：NUL
+
+	注意：该函数会改变大量菜单的menulistend属性，在该菜单所在的菜单列表中，对于出入菜单特殊功能，
+		建议使用EnterMenu，ExitMenu。EnterShowMenuList与ExitShowMenuList存在多次触发问题
+*/
+void ScrollingDisplay_Y(menu_area *target, int16_t showSY, uint8_t showEY, int16_t TarSY, int16_t TarEY) 
+{
+	menu_area *p;
+	
+	p = FindMeunListHeard(target);
+	
+	if( !(p->specialfeatures & MenuScrolling) ) {
+		p->specialfeatures |= MenuScrolling;
+		ChangeMenuY(TargetMenu, showSY, showEY, 0);
+	}
+	
+	if(showSY > TarSY) showSY = TarSY;
+	if(TarEY > showEY) TarEY = showEY;
+	
+	if(TargetMenu->y < TarSY) {
+		ChangeMenuY(TargetMenu, showSY, showEY, TarSY-TargetMenu->y);
+	}
+	else if(TargetMenu->y+TargetMenu->high >= TarEY) {
+		ChangeMenuY(TargetMenu, showSY, showEY, TarEY-TargetMenu->y - TargetMenu->high);
+	}
+}
+
+
+
+
+
+
+
 // ========================== 图 形 化 =======================
 
 /*
@@ -606,7 +700,10 @@ static void DrawMenuRectangle(menu_area *target)
 
 
 
+
+
 // ======================== 系 统 调 用 ====================
+
 
 menu_area * TargetMenu = NULL; // 实时目标菜单
 
@@ -833,23 +930,31 @@ static void MenuListOverallRun(menu_area *target)
 */
 static void StateToPointer(void)
 {
+	menu_area *p = NULL;
+	
 	switch(StatusInformation)
 	{
 		case Menu_up: 		TargetMenu=NextCancheMenuList(TargetMenu, -1);break;
 		case Menu_down: 	TargetMenu=NextCancheMenuList(TargetMenu,  1);break;
 		case Menu_Sub:  
-			if(TargetMenu->subclass != NULL) StatusInformation = Menu_noaction; // 防止切换菜单列表时立即运行函数内部指令
-			TargetMenu=NextCancheMenuHeard(TargetMenu, 1);
+			if(TargetMenu->subclass != NULL) {
+				StatusInformation = Menu_noaction; // 防止切换菜单列表时立即运行函数内部指令
+				TargetMenu=NextCancheMenuHeard(TargetMenu, 1);
+			}
 			break;
 		case Menu_Father:  
 			// 0: 返回至菜单头的父类   1: 返回至当前菜单的父类
 			#if 0
-				if(TargetMenu->father != NULL) StatusInformation = Menu_noaction; // 防止切换菜单列表时立即运行函数内部指令
-				TargetMenu=NextCancheMenuHeard(TargetMenu, -1);
+				if(TargetMenu->father != NULL) {
+					StatusInformation = Menu_noaction; // 防止切换菜单列表时立即运行函数内部指令
+					TargetMenu=NextCancheMenuHeard(TargetMenu, -1);
+				}
 			#else
-				TargetMenu = FindMeunListHeard(TargetMenu);
-				if(TargetMenu->father != NULL) StatusInformation = Menu_noaction; // 防止切换菜单列表时立即运行函数内部指令
-				TargetMenu=NextCancheMenuHeard(TargetMenu, -1);
+				p = FindMeunListHeard(TargetMenu);
+				if(p->father != NULL) {
+					StatusInformation = Menu_noaction; // 防止切换菜单列表时立即运行函数内部指令
+					TargetMenu=NextCancheMenuHeard(p, -1);
+				}
 			#endif
 			break;
 		default:break;

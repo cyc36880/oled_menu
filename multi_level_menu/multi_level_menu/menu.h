@@ -40,10 +40,10 @@ enum MenuState
 enum SpecialInformation
 {
 	MenuTime = 0x01, //时间列表
-	EnterMenu = 0x02, // 进入菜单，if末尾建议加return
+	EnterMenu = 0x02, // 进入菜单，if末尾建议加return 
 	ExitMenu = 0x04,  // 退出菜单，if末尾建议加return
-	EnterShowMenuList = 0x08, // 进入显示菜单列表，if末尾建议加return
-	ExitShowMenuList = 0x10, // 退出显示菜单列表，if末尾建议加return
+	EnterShowMenuList = 0x08, // 进入显示菜单列表，if末尾建议加return 滚动显示禁用该功能
+	ExitShowMenuList = 0x10, // 退出显示菜单列表，if末尾建议加return  滚动显示禁用该功能
 	
 	/*****上述功能的改进*****/
 	
@@ -51,6 +51,7 @@ enum SpecialInformation
 	
 	/******** 其 它 **********/
 	MenuHaveOverall = 0x40,//不可使用，其它功能占用该位。菜单列表全局
+	MenuScrolling   = 0x80,//不可使用，其它功能占用该位。菜单列表全局
 };
 
 
@@ -97,11 +98,12 @@ typedef struct MENULISTOVERALL
 menu_area *AddToMenuList(int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer);
 //功能：对已有菜单注册或添加菜单 
 menu_area *SetMenu(menu_area *target, int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer);
-//功能：快速目标菜单下方仿制  0:有超出部分立即按照头创建 1:只有完全在屏幕下方才按头创建
-menu_area *FastSimilarMenu(menu_area *target, menu_area *source, bool kind);
+//功能：快速目标菜单下方仿制  	kind：类型 0:有超出部分立即按照头仿造 1:只有完全在屏幕下方才按头仿造 2:仅在最后下方仿造
+menu_area *FastSimilarMenu(menu_area *target, menu_area *source, uint8_t kind);
 
 //功能：链接到父类
 void LinkToParentClass(menu_area *target, menu_area *source);
+
 
 
 //功能：对菜单上下偏移寻址 
@@ -130,6 +132,7 @@ menu_area *MenuListShowTail(menu_area *target);
 
 
 
+
 //功能：目标菜单首尾相连，空指针跳过
 void MakeMenuListRing(menu_area *target);
 
@@ -142,6 +145,19 @@ void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms);
 //功能：特殊功能检查，触发返回1，否则返回0
 bool TriggerCheck(menu_area *target, enum SpecialInformation function);
 
+/*
+	功能：滚动显示
+	target：当前所处的任一菜单指针
+	showSY：列表允许显示的起始y坐标 头坐标
+	showEY：列表允许显示的结束y坐标 底坐标
+	TarSY： 指针允许的起始y坐标     头坐标 应 >= showSY
+	TarEY： 指针允许的结束y坐标     底坐标 应 <= showEY
+	@ret：NUL
+
+	注意：该函数会改变大量菜单的menulistend属性，在该菜单所在的菜单列表中，对于出入菜单特殊功能，
+		建议使用EnterMenu，ExitMenu。EnterShowMenuList与ExitShowMenuList存在多次触发问题
+*/
+void ScrollingDisplay_Y(menu_area *target, int16_t showSY, uint8_t showEY, int16_t TarSY, int16_t TarEY);
 
 
 

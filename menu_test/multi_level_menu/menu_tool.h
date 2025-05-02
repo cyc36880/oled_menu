@@ -50,7 +50,7 @@ extern MessageTypedef *Message_Key; //按键消息广播列表
 
 
 #define MesInit_Key(km) MessageInit(&Message_Key,km)     //按键消息 - 初始化
-#define MesBro_Key(km) MessageBroadcast(Message_Key, km) //按键消息 - 发送
+//#define MesBro_Key(km) MessageBroadcast(Message_Key, km) //按键消息 - 发送
 
 
 

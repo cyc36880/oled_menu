@@ -20,6 +20,10 @@ extern const uint8_t *font_SizeInf; //字体大小
 // 设置英文显示字体
 void SetFont(const uint8_t *xfont);
 
+//复位默认字体
+void RestFont(void);
+
+
 // -- 单行显示 --
 
 // 功能：在菜单中写Asc字符串，target为NULL在屏幕写
@@ -51,7 +55,17 @@ FontInfoType * MenuShowNum(menu_area *target, int16_t x, int16_t y, uint8_t len,
 */
 FontInfoType* m_printf(menu_area *target, int16_t x, int16_t y, const char *format, ...);
 
-
+/*
+	功能：数字滚动显示 y方向 单个数字
+	target：菜单句柄（为NULL没有意义）
+	x，y ：相对于菜单的坐标
+	mem：用与记录位置，需初始化为0
+	now_nub：当前的值
+	want_nub：期望的值
+	speed: 滚动速度
+ */
+void NumScrollShow(menu_area *target, int16_t x, int16_t y, uint8_t *mem, uint8_t *now_nub, uint8_t want_nub, uint8_t speed);
+void NumScrollSet(const uint8_t *pic, uint16_t zf_x, uint16_t zf_y);
 
 /*
 	功能：字符串处理
@@ -74,13 +88,11 @@ FontInfoType* StringDeal(const uint8_t *str);
 */
 uint8_t SetIndicatorSize(FontInfoType *FontInfo, menu_area *target, const uint8_t *limitSize);
 
-
-
 // -------------- 串 口 --------------
 
 
-#define MENUSERIALWINDOWWIDTH   10 //窗口宽度，字节为单位 max:255
-#define MENUSERIALWINDOWHIGH   4 //窗口高度，字节为单位   max:255
+#define MENUSERIALWINDOWWIDTH   21 //窗口宽度，字节为单位 max:255
+#define MENUSERIALWINDOWHIGH   5 //窗口高度，字节为单位   max:255
 
 #define MenuSerialBufSzie  (MENUSERIALWINDOWWIDTH * MENUSERIALWINDOWHIGH + 1) //串口缓冲区字节大小
 
@@ -89,19 +101,23 @@ extern uint16_t MenuSerialRxNum; //接收数量，最大为MenuSerialBufSzie
 
 
 //串口填充
-void MenuPaddingSerialBuf(uint8_t dat);
+void MenuPaddingSerial(uint8_t rx);
 // 串口文本显示<仅支持英文>
 void SerialCharacterText(menu_area *target, int16_t x, int16_t y);
 //清空串口显示
 void ClearnSerialShowBuf(void);
 
+void MenuSerStopRecive(uint8_t enb);
+uint8_t SerisStop(void);
+
+void SerSetHex(uint8_t isHex);
+uint8_t SerisHex(void);
 /*
 	串口字符串匹配
 	@ret 1:含由匹配字符 0：匹配失败
 */
 uint8_t SerStrMatching(const uint8_t *str);
 	
-
 
 #endif
 

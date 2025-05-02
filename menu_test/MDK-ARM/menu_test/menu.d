@@ -39,3 +39,4 @@ menu_test\menu.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h
 menu_test\menu.o: ../Core/Inc/spi.h
 menu_test\menu.o: ..\multi_level_menu\Graphicalfunctions.h
 menu_test\menu.o: ..\multi_level_menu\menu_tool.h
+menu_test\menu.o: ..\multi_level_menu\menufontshow.h

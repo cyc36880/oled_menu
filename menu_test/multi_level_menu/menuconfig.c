@@ -6,48 +6,23 @@
 #include "Graphicalfunctions.h" // 图形化函数
 #include "menu_tool.h" //工具
 
-MessageTypedef mes;
 
-ProgressBarTypedef bar;
+menu_area mainMenu; //第一个菜单
 
-const uint8_t *menutext[] = 
-{
-	"7k7k",
-	"123",
-	"456",
-	"56789",
-	"a滋生\nd",
-	"cdeqwe",
-	"12滋生34",
-	"33\n44",
-	"34444"
-};
-menu_area menuarray[sizeof(menutext)/sizeof(menutext[0])];
-const uint8_t MenuNum = sizeof(menutext)/sizeof(menutext[0]);
-
-void ment_f(menu_area *target);
+static void menu_f(menu_area *target);
 
 /*
 	功能：初始化菜单列表 <此函数名不可修改>
 */
 static void MakeMenu(void)
 {
-	TargetMenu = &menuarray[0];
+	AddToFunctionTicker(50, normalRun, MenuRefresh, 0); //定时刷新
+	TargetMenuPointrt.style = ENABLE; //指示器动效
 	
-	TargetMenuPointrt.style = ENABLE; //使能指示器动画
+	TargetMenu = &mainMenu;
 	
-	MesInit_Key(&mes);
-	
-	AddToFunctionTicker(50, normalRun, MenuRefresh, 0); //所有界面刷新
+	SetMenu(&mainMenu, 0, 0, 0, 0, ENABLE, NULL)->menuinterface = menu_f;
 
-	SetMenu(&menuarray[0], 0, 0, 16*3, 16, ENABLE, NULL);
-	
-	BatchFastSimilarMenuDown(menuarray, menuarray, MenuNum, 2, ment_f);
-	MakeMenuListRing(menuarray);
-
-	
-	ProgressBarInit(&bar, 0, 60, 15, sizeof(menutext)/sizeof(menutext[0]))->animation = ENABLE;
-	
 }
 
 /*
@@ -56,37 +31,12 @@ static void MakeMenu(void)
 */
 
 
-void ment_f(menu_area *target)
+static void menu_f(menu_area *target)
 {
-	FontInfoType *FontInfo;
+	m_printf(NULL, 0, 0, "滋生123");
 	
-	const uint8_t *str = menutext[target->id-1];
 	
-	FontInfo = StringDeal(str);
-	
-	switch(target->id)
-	{
-		case 6:
-			SetFont(F6X8);
-			
 
-			
-		break;
-		
-		default:
-		
-		break;
-	}
-	if(FontInfo->hznum) //判断是否有汉字
-		CharacterTextC(target, 0, 0, FontInfo->maxPix+10, str);
-	else
-		CharacterText(target, 0, 0, FontInfo->ascnum, str);
-	
-	if(SetIndicatorSize(FontInfo, target, NULL)) //指示器变化
-	{
-		MesBro_Key(Menu_noaction); //发送空白消息
-	}
-	SetFont(F8X16); //复位字体大小
 }
 
 
@@ -118,16 +68,14 @@ void AlwaysRun(void)
 /**** 菜单的每次刷新都会执行该函数 执行优先级最高 《！！不要写显示相关函数，会被异常清空！！》 ****/
 void MenuAlwaysRun_PH(void)
 {
-	
-	
-}
 
+}
 
 
 /**** 菜单的每次刷新都会执行该函数 执行优先级中****/
 void MenuAlwaysRun_PM(void)
 {
-	ListSwitchIns(&mes, 0, 0, 63);
+
 }
 
 
@@ -135,7 +83,7 @@ void MenuAlwaysRun_PM(void)
 /**** 菜单的每次刷新都会执行该函数 执行优先级低 ****/
 void MenuAlwaysRun_PL(void)
 {
-	ProgressBar(&bar, 64, 40, TargetMenu->id);
+
 }
 
 
@@ -147,10 +95,9 @@ void MenuInit(void)
 {
 	MenuSysBaseInit(); //系统初始化
 	MakeMenu(); //菜单列表初始化
-
+	sMenuListInit();
 	/* ********** USER BEGIN********** */
 	
-	MenuCoorAlignment(TargetMenu, 0);
 	
 	/* ********** USER END ********** */
 	

@@ -74,6 +74,13 @@ typedef struct MENU_TIMEMS
 	uint16_t counttime; //起始计数值
 	uint16_t timems;    //预设时间
 }menu_timems;
+//列表初始化
+typedef struct LISTINIT
+{
+	void *Target;
+	struct LISTINIT *next;
+	uint8_t flag;
+}ListInit;
 
 //菜单参数
 typedef struct MENU_AREA
@@ -93,6 +100,8 @@ typedef struct MENU_AREA
 	menu_timems *menu_time;
 	uint16_t specialfeatures;//特殊功能注册
 	uint16_t specfeattrigflag; //特殊功能触发标记
+	
+	ListInit ListTarget; //初始化列表
 }menu_area;
 
 
@@ -119,24 +128,9 @@ typedef struct MENULISTOVERALL
 
 
 
-//功能：注册或添加菜单 
-menu_area *AddToMenuList(int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer);
-//功能：对已有菜单注册或添加菜单 
-menu_area *SetMenu(menu_area *target, int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer);
-
-//功能：快速目标菜单下方仿制  	mod：类型 0:有超出部分立即按照头仿造 1:只有完全在屏幕下方才按头仿造 2:仅在最后下方仿造
-menu_area *FastSimilarMenuDown(menu_area *target, menu_area *source, uint8_t mod);
-//功能：快速目标菜单右侧仿制  	mod：类型 0:有超出部分立即按照头仿造 1:只有完全在屏幕右方才按头仿造 2:仅在最后右方仿造
-menu_area *FastSimilarMenuRight(menu_area *target, menu_area *source, uint8_t mod);
-
-//功能：批量初始化  source：menu_area类型的数组  n：数组个数  mod：类型  menuinterface：统一链接的函数
-void BatchFastSimilarMenuDown(menu_area *target, menu_area source[], uint16_t n, uint8_t mod, void (*menuinterface)(struct MENU_AREA *target));
-//功能：批量初始化  source：menu_area类型的数组  n：数组个数  mod：类型  menuinterface：统一链接的函数
-void BatchFastSimilarMenuRight(menu_area *target, menu_area source[], uint16_t n, uint8_t mod, void (*menuinterface)(struct MENU_AREA *target));
 
 
-//功能：链接到父类
-void LinkToParentClass(menu_area *father, menu_area *sub);
+// ----------- 菜 单 寻 址 --------------------
 
 
 
@@ -169,12 +163,68 @@ menu_area *FindMenuOfID(menu_area *target, uint16_t id, bool mod);
 
 
 
+// ---------- 菜 单 注 册 与 链 接 -----------------
+
+
+
+//功能：注册或添加菜单 
+menu_area *AddToMenuList(int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer);
+//功能：对已有菜单注册或添加菜单 
+menu_area *SetMenu(menu_area *target, int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer);
+
+
+//功能：快速目标菜单下方仿制  	mod：类型 0:有超出部分立即按照头仿造 1:只有完全在屏幕下方才按头仿造 2:仅在最后下方仿造
+menu_area *FastSimilarMenuDown(menu_area *target, menu_area *source, uint8_t mod);
+//功能：快速目标菜单右侧仿制  	mod：类型 0:有超出部分立即按照头仿造 1:只有完全在屏幕右方才按头仿造 2:仅在最后右方仿造
+menu_area *FastSimilarMenuRight(menu_area *target, menu_area *source, uint8_t mod);
+
+
+//功能：批量初始化  source：menu_area类型的数组  n：数组个数  mod：类型  menuinterface：统一链接的函数
+void BatchFastSimilarMenuDown(menu_area *target, menu_area source[], uint16_t n, uint8_t mod, void (*menuinterface)(struct MENU_AREA *target));
+//功能：批量初始化  source：menu_area类型的数组  n：数组个数  mod：类型  menuinterface：统一链接的函数
+void BatchFastSimilarMenuRight(menu_area *target, menu_area source[], uint16_t n, uint8_t mod, void (*menuinterface)(struct MENU_AREA *target));
+
+
+//功能：链接到父类
+void LinkToParentClass(menu_area *father, menu_area *sub);
+
+
 //功能：目标菜单首尾相连，空指针跳过
 void MakeMenuListRing(menu_area *target);
 
+
+
+// --------------- 初 始 化 列 表 -------------
+
+
+// 功能：向列表加入初始化执行函数
+ListInit* AddToListInit(ListInit **ListTarget, ListInit *target, void *func);
+
+//功能：列表检查  注意：if 末尾加  return！！
+uint8_t CheckListInit(ListInit *ListTarget);
+
+
+// ----- 菜 单 列 表 ---
+
+
+//功能：加入到菜单初始化列表中
+void AddToMenuListInit(menu_area *target);
+
+//功能：开始菜单列表初始化
+void sMenuListInit(void);
+
+//功能：菜单列表检查    注意：if 末尾加  return！！
+uint8_t CkeckMenuList(menu_area *target);
+
+
+
+
+// ************* 其 他 功 能 *******************
+
+
+
 //功能：菜单列表始终执行函数 <仅对当前列表>
 MenuListOverall *MenuOverall(menu_area *target);
-
 
 
 //功能：对已有的时间添加至菜单 <仅针对时间的特殊功能注册>
@@ -205,8 +255,6 @@ extern uint8_t ResponseEnable; //菜单切换响应
 
 
 
-
-
 /*
 * 输入要显示占用的高度（high）或宽度（width），输出左上角的x或y相对于
 * 菜单中心的坐标
@@ -231,6 +279,7 @@ void AlwaysRun(void);
 
 
 // =========================== 屏 幕 ====================================
+
 
 #define SCREENWIDTH 128 // 屏幕宽度
 #define SCREENHIGH  64  // 屏幕高度

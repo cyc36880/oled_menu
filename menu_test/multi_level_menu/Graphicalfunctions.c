@@ -59,6 +59,19 @@ void write_point(int16_t x, int16_t y, uint8_t w_d)
 			break;
 	}
 }
+void menu_write_point(menu_area *target, int16_t x, int16_t y,  uint8_t w_d)
+{
+	if(target == NULL)
+	{
+		write_point(x, y, w_d);
+	}
+	else
+	{
+		if(x<0 || y<0) return;
+		if(x>=target->width || y>=target->high) return;
+		write_point(target->x + x, target->y+y, w_d);
+	}
+}
 
 //横向快速画线
 static void FastLineT(int16_t x, int16_t y, uint16_t w)
@@ -498,7 +511,7 @@ int16_t *LineChart(TypLineChartMap *t, int16_t x, int16_t y)
 
 	注意：取模格式> 阴码 列行式 逆向
 */
-void PictureShow(menu_area *target, const uint8_t *psize, const uint8_t *p, int16_t x, int16_t y)
+static void PictureShow(menu_area *target, const uint8_t *psize, const uint8_t *p, int16_t x, int16_t y)
 {
 	uint8_t h,w;
 	bool w_b=0;
@@ -621,7 +634,7 @@ static void FastDrawPic(const uint8_t *pic, int16_t x, int16_t y, uint16_t width
 	图片显示（快速绘制）
 	（为与其它函数匹配）除无法在菜单中限制显示，其余与上一样
 */
-void FastDrawPic2(const uint8_t *psize, const uint8_t *p, int16_t x, int16_t y)
+static void FastDrawPic2(const uint8_t *psize, const uint8_t *p, int16_t x, int16_t y)
 {
 	uint8_t wight;
 	uint8_t high;
@@ -637,8 +650,96 @@ void FastDrawPic2(const uint8_t *psize, const uint8_t *p, int16_t x, int16_t y)
 	}
 	
 	FastDrawPic(p, x, y, wight, high);
-	
 }
+#include "menufontshow.h" //字符函数
+/*
+	功能：图片显示
+	取模格式：阴码 列行式 逆向
+
+	注意：若psize为NULL，图片大小应定义在p中，否则大小将按psize设置（真实大小，该函数不会缩放图片）
+*/
+void DrawPicture(menu_area *target, const uint8_t *psize, const uint8_t *p, int16_t x, int16_t y)
+{
+	if(target == NULL)
+	{
+		FastDrawPic2(psize, p, x, y);
+	}
+	else
+	{
+		PictureShow(target, psize, p, x, y);
+	}
+}
+
+/*
+	功能：图像缩放显示
+	psize：原始尺寸信息，为NULL则使用p中头两位
+	x，y：相对于屏幕的坐标
+	zf_x，zf_y:x、y方向的缩放倍数。100为原尺寸
+*/
+void ImageScaling(menu_area *target, const uint8_t *psize, const uint8_t *p, int16_t x, int16_t y, uint16_t zf_x, uint16_t zf_y)
+{
+	const uint16_t gain = 500; //增益（越大，变化越细腻 下面会乘100，积不要大于65535）
+	
+	uint16_t i, j, px, py; //遍历图像
+	int16_t show_x, show_y;
+	uint16_t picsize_w, picsize_h; //图像的宽高
+	uint16_t step_x, step_y; //步长 
+
+	if(p == NULL) return;
+	if(zf_x==0 || zf_y==0) return; //0缩放不显示
+	else if(zf_x==100 && zf_y==100) //原始图像显示
+	{
+		DrawPicture(target, psize, p, x, y);
+		return;
+	}
+	else
+	{
+		step_x = 100*gain/zf_x;//步长 
+		step_y = 100*gain/zf_y; 
+	}
+	if(psize == NULL) //确定图像的宽高
+	{
+		picsize_w = p[0];
+		picsize_h = p[1];
+		p = p+2;
+	}
+	else
+	{
+		picsize_w = psize[0];
+		picsize_h = psize[1];
+	}
+
+	if(x>=SCREENWIDTH || y>=SCREENHIGH) //判断是否在屏幕的显示范围
+		return;
+	if(x+picsize_w*step_x/gain < 0)
+		return;
+	if(y+picsize_h*step_y/gain < 0)
+		return;
+
+	show_x = x;
+	show_y = y;
+	
+	for( i=0,py=0; i<picsize_h; py+=step_y,i=py/gain)
+	{
+		for( j=0,px=0; j<picsize_w; px+=step_x,j=px/gain)
+		{
+			if( p[j + i/8*picsize_w] & (0x01<<(i%8)) )
+			{
+				menu_write_point(target, show_x, show_y, 1);
+			}
+			else
+			{
+				if(GRAPHICSSHOWMANNER == GraphicsCover) //覆盖
+					menu_write_point(target, show_x, show_y, 0);
+			}
+			show_x++;
+		}
+		show_x=x;
+		show_y++;
+	}
+}
+
+
 
 
 //========================== 线 立 方 体 ==============================
@@ -880,8 +981,8 @@ void InterfaceBlurry(uint8_t n)
 	}
 }
 
-static const uint8_t quitMenuBlurryspeed[]  = {NULL, 1, 3, 4}; // 1 -> *
-static const uint8_t enterMenuBlurryspeed[] = {NULL, 1, 3, 4}; // 1 <- *
+static const uint8_t quitMenuBlurryspeed[]  = {NULL, 1, 3, 4, 4}; // 1 -> *
+static const uint8_t enterMenuBlurryspeed[] = {NULL, 1, 2, 3, 4}; // 1 <- *
 /*
 	功能：菜单进入、离开虚化
 
@@ -899,7 +1000,7 @@ static const uint8_t enterMenuBlurryspeed[] = {NULL, 1, 3, 4}; // 1 <- *
 
 uint8_t MenuDynamicBlurry(uint8_t state)
 {
-	const uint8_t MaxCount = 3;
+	const uint8_t MaxCount = 4;
 	
 	static menu_area *LastMenuTarget = NULL;
 	static menu_area *NowMenuTarget = NULL;

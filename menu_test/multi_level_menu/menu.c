@@ -1,7 +1,7 @@
 #include "menu.h"
 #include "Graphicalfunctions.h"
 #include "menu_tool.h"
-
+#include "menufontshow.h"
 /*
 	0: 输入立即触发
 	1: 输入回弹后再触发，但不影响StatusInformationAlways
@@ -14,6 +14,8 @@
 
 void FunctionTickerRun(void); //在while中查询函数是否执行
 void FunctionTickerRunIRQ(uint16_t ms); //在中断中查询函数是否该执行
+static void MenuRest(void); //单个菜单刷新后的复位
+
 // 输入禁止时
 static void StopKeyReceive(uint8_t *p);
 
@@ -176,12 +178,17 @@ uint8_t inScreen(menu_area *target)
 	{
 		return 0;
 	}
-	else if( (target->x+target->width-1)<0 || (target->y+target->high-1)<0 )
+	else if(target->x>=0 && target->y>=0)
+	{
+		return 1;
+	}
+	else if( (target->x+target->width)<=0 || (target->y+target->high)<=0)
 	{
 		return 0;
 	}
 	return 1;
 }
+
 
 
 // ========================== 菜 单 ==================================
@@ -216,6 +223,9 @@ menu_area *SetMenu(menu_area *target, int16_t x, int16_t y, uint16_t width, uint
 	menu_area *k;
 	
 	if(!p) return NULL;
+	
+	ClearnMemory(target, sizeof(menu_area)); //空间清空
+	
 	if(transfer != NULL)  //尾部加入 
 	{
 		k = FindMeunListTail(transfer); //找到文件尾部
@@ -726,10 +736,113 @@ static void AddToMenuTimeList(menu_area *target, uint16_t ms)
 	target->menu_time->timems = ms; //想要执行时间间隔
 }
 
+// ====================初 始 化 列 表 ========================
+
+static ListInit *MentListInitTarget = NULL; //菜单列表句柄头
+
+/*
+	功能：向列表加入初始化执行函数
+
+	ListTarget：列表头句柄
+	target：表句柄
+	func：执行函数
+*/
+ListInit* AddToListInit(ListInit **ListTarget, ListInit *target, void *func)
+{
+	ListInit *p = *ListTarget;
+	
+	if(target==NULL) return NULL;
+	
+	if(*ListTarget == NULL)
+		*ListTarget = target;
+	else
+	{
+		while(p->next)
+		{
+			p = p->next;
+		}
+		p->next = target;
+	}
+	target->flag = 1;
+	target->next = NULL;
+	target->Target = func;
+	
+	return target;
+}
+
+/*
+	功能：列表检查
+	ListTarget：列表句柄
+
+	ret：0 不能执行， 1 可以执行
+
+	注意：if 末尾加  return！！
+*/
+uint8_t CheckListInit(ListInit *ListTarget)
+{
+	if(ListTarget->flag==1)
+	{
+		ListTarget->flag=0;
+		return 1;
+	}
+	return 0;
+}
 
 
+// --- 菜单专用 ---
 
+/*
+	功能：开始菜单列表初始化
+	ListTarget：列表句柄
+*/
+static void startMenuListInit(ListInit *ListTarget)
+{
+	ListInit *p = ListTarget;
+	menu_area *tp;
+	
+	while(p)
+	{
+		if(p->flag)
+		{
+			tp = (menu_area *)(p->Target); //自定义 替换此
+			if(tp->menuinterface)
+				tp->menuinterface(tp);
+		}
+		p=p->next;
+	}
+}
 
+/*
+	功能：加入到菜单初始化列表中
+	listp：列表句柄
+	target：菜单句柄
+*/
+void AddToMenuListInit(menu_area *target)
+{
+	AddToListInit(&MentListInitTarget, &target->ListTarget, target);
+}
+
+/*
+	功能：开始菜单列表初始化
+*/
+void sMenuListInit(void)
+{
+	startMenuListInit(MentListInitTarget);
+}
+
+/*
+	功能：菜单列表检查
+
+	target：菜单句柄
+
+	ret：允许为1，否则为0
+
+  注意：if 末尾加  return！！
+*/
+uint8_t CkeckMenuList(menu_area *target)
+{
+	return CheckListInit(&target->ListTarget);
+}
 
 
 // ====================== 特 殊 功 能 ========================
@@ -861,16 +974,20 @@ static void DrawMenuRectangle(MenuTargetTypedef *MenuPointer)
 		high = TandemLevel_PID(&h_pid, target->high, MenuPointer->high);
 		if(high < R*2) high = R*2;  //防止过小出现错误
 		if(width < R*2) width = R*2;
-		DrawfillRoundRect(x, y, width, high, R);
 	}
-	else {
-		DrawfillRoundRect(target->x, target->y, target->width, target->high, R);
+	else 
+	{
+		x = target->x;
+		y = target->y;
+		width = target->width;
+		high = target->high;
 	}
 	MenuPointer->x = x;
 	MenuPointer->y = y;
 	MenuPointer->width = width;
 	MenuPointer->high = high;
 	MenuPointer->R = R;
+	DrawfillRoundRect(MenuPointer->x, MenuPointer->y, MenuPointer->width, MenuPointer->high, MenuPointer->R);
 }
 
 
@@ -1051,7 +1168,7 @@ static void MenuListInterface(menu_area *target)
 		if( (inScreen(p) || p->specialfeatures&NotIgnore) && p->menuinterface){
 			p->menuinterface(p);
 		}
-		
+		MenuRest(); //菜单复位
 		if(p == pTail) break; 
 		p = p->next;
 	}
@@ -1224,6 +1341,18 @@ static void StateToPointer(void)
 	}
 }
 
+// 单个菜单刷新后复位
+static void MenuRest(void)
+{
+	RestFont(); //恢复默认字体
+}
+
+//列表菜单刷新后复位
+static void endRest(void)
+{
+
+}
+
 // 输入禁止时
 static void StopKeyReceive(uint8_t *p)
 {
@@ -1313,6 +1442,7 @@ void MenuRun(void)
 		MenuListInterface(TargetMenu); //依次显示当前菜单列表
 		MenuCheckedStyle(&TargetMenuPointrt);//菜单选中风格
 		MenuAlwaysRun_PL();
+		endRest();//系统复位
 		disp_flush();// 刷新屏幕
 		
 		StatusInformation = Menu_noaction; //输入设备状态复位

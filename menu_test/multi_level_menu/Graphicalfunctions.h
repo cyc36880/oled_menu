@@ -81,16 +81,14 @@ int16_t *LineChart(TypLineChartMap *t, int16_t x, int16_t y);
 
 	注意：若psize为NULL，图片大小应定义在p中，否则大小将按psize设置（真实大小，该函数不会缩放图片）
 */
-void PictureShow(menu_area *target, const uint8_t *psize, const uint8_t *p, int16_t x, int16_t y);
+void DrawPicture(menu_area *target, const uint8_t *psize, const uint8_t *p, int16_t x, int16_t y);
 /*
-	图片显示（快速绘制）
-	（为与其它函数匹配）除无法在菜单中限制显示，其余与上一样
+	功能：图像缩放显示
+	psize：原始尺寸信息，为NULL则使用p中头两位
+	x，y：相对于屏幕的坐标
+	zf_x，zf_y:x、y方向的缩放倍数。100为原尺寸
 */
-void FastDrawPic2(const uint8_t *psize, const uint8_t *p, int16_t x, int16_t y);
-
-
-
-
+void ImageScaling(menu_area *target, const uint8_t *psize, const uint8_t *p, int16_t x, int16_t y, uint16_t zf_x, uint16_t zf_y);
 
 
 // -------------------- 进 度 条 -----------------------

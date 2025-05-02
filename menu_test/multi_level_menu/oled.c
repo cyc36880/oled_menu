@@ -36,7 +36,7 @@ static void OLED_Set_Pos(unsigned char x, unsigned char y)    //×ø±êÎ»ÖÃ
 	OLED_WR_Byte((x&0x0f)|0x01,OLED_CMD); 
 } 
 static void OLED_Clear()             //ÇåÆÁ
-{  
+{
 	u8 i,n;		    
 	for(i=0;i<8;i++)  
 	{  

@@ -368,7 +368,7 @@ uint8_t MenuCoorRecovery(menu_area *target, uint8_t mod, uint8_t style)
 	int16_t dif;
 
 	if(MenuShowHeard == MenuShowTail) return 1;
-	if(pid.P < 0.5) offsets = 1/pid.P;
+	if(pid.P < 0.5) offsets = 1/pid.P+1;
 	else if(pid.P < 1) offsets=1;
 	else offsets = 0;
 	
@@ -386,7 +386,10 @@ uint8_t MenuCoorRecovery(menu_area *target, uint8_t mod, uint8_t style)
 				dif = p->y - (p->previous->y + p->previous->high);
 				if(dif != 0)
 				{
-					p->y = TandemLevel_PID(&pid, p->previous->y + p->previous->high+offsets, p->y);
+					if(abs(dif)<3)
+						p->y -= dif;
+					else
+						p->y = TandemLevel_PID(&pid, p->previous->y + p->previous->high+offsets, p->y);
 					state = 0;
 				}
 			}
@@ -400,7 +403,10 @@ uint8_t MenuCoorRecovery(menu_area *target, uint8_t mod, uint8_t style)
 				dif = p->x - (p->previous->x + p->previous->width);
 				if(dif != 0)
 				{
-					p->x = TandemLevel_PID(&pid, p->previous->x + p->previous->width+1, p->x);
+					if(abs(dif)<3)
+						p->x -= dif;
+					else
+						p->x = TandemLevel_PID(&pid, p->previous->x + p->previous->width+offsets, p->x);
 					state = 0;
 				}
 			}

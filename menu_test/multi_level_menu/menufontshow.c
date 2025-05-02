@@ -5,15 +5,26 @@
 #include "Graphicalfunctions.h"
 #include "oledfont.h"
 
-
+static uint8_t fontchangeflag=0;
 static const uint8_t *font = F8X16+2;
 const uint8_t *font_SizeInf = F8X16;
 
 //设置英文显示字体
 void SetFont(const uint8_t *xfont)
 {
+	fontchangeflag = 1;
 	font = xfont+2;
 	font_SizeInf = xfont;
+}
+
+//复位默认字体
+void RestFont(void)
+{
+	if(fontchangeflag)
+	{
+		font = F8X16+2;
+		font_SizeInf = F8X16;
+	}
 }
 
 /*
@@ -38,7 +49,7 @@ static void MenuShowAsc(menu_area *target,int16_t x, int16_t y, uint8_t asc)
 	
 	if(target == NULL) 
 	{
-		FastDrawPic2(font_SizeInf, font + c*wight*DIVIDEUP(high), x, y);
+		DrawPicture(NULL,font_SizeInf, font + c*wight*DIVIDEUP(high), x, y);
 	}
 	else
 	{
@@ -47,7 +58,7 @@ static void MenuShowAsc(menu_area *target,int16_t x, int16_t y, uint8_t asc)
 		
 		if( x>=0 && y>=0 && (x+font_SizeInf[0]-1)<target->width && (y+font_SizeInf[1]-1)<target->high)
 		{
-			FastDrawPic2(font_SizeInf, font + c*wight*DIVIDEUP(high), target->x + x, target->y + y);
+			DrawPicture(NULL, font_SizeInf, font + c*wight*DIVIDEUP(high), target->x + x, target->y + y);
 		}
 		else
 		{
@@ -392,13 +403,13 @@ static void MenuHZ16x16(menu_area *target, int16_t x, int16_t y, uint8_t *s_dat)
 	
 	if(target == NULL) 
 	{
-		FastDrawPic2(psize, (const uint8_t *)HZK16x16[(j0-1)*2], x, y);
+		DrawPicture(NULL, psize, (const uint8_t *)HZK16x16[(j0-1)*2], x, y);
 	}
 	else
 	{
 		if( x>=0 && y>=0 && (x+16-1)<target->width && (y+16-1)<target->high)
 		{
-			FastDrawPic2(psize, (const uint8_t *)HZK16x16[(j0-1)*2], target->x+x, target->y+y);
+			DrawPicture(NULL, psize, (const uint8_t *)HZK16x16[(j0-1)*2], target->x+x, target->y+y);
 		}
 		else
 		{
@@ -585,6 +596,44 @@ FontInfoType* m_printf(menu_area *target,int16_t x, int16_t y, const char *forma
 		return CharacterText(target, x, y, 0, PRINTF_BUFF);
 }
 
+static const uint8_t *NumPic = F8X16+2+(16*('0'-' '));
+static const uint8_t *NUmPicSize = F8X16;
+static uint16_t NumPicZf_x=100, NumPicZf_y=100;
+
+void NumScrollSet(const uint8_t *pic, uint16_t zf_x, uint16_t zf_y)
+{
+	NumPic = pic+2;
+	NUmPicSize = pic;
+	NumPicZf_x = zf_x;
+	NumPicZf_y = zf_y;
+}
+/*
+	功能：数字滚动显示 y方向 单个数字
+	target：菜单句柄（为NULL没有意义）
+	x，y ：相对于菜单的坐标
+	mem：用与记录位置，需初始化为0
+	now_nub：当前的值
+	want_nub：期望的值
+	speed: 滚动速度
+ */
+void NumScrollShow(menu_area *target, int16_t x, int16_t y, uint8_t *mem, uint8_t *now_nub, uint8_t want_nub, uint8_t speed)
+{
+	if(*now_nub != want_nub)
+	{
+		*mem+=speed;
+		if(*mem > (NUmPicSize[1]-1)*NumPicZf_y/100 )
+		{
+			*mem=0;
+			*now_nub = want_nub;
+		}
+	}
+	ImageScaling(target, NUmPicSize, NumPic+DIVIDEUP(NUmPicSize[0]*NUmPicSize[1])*(*now_nub), x, y-(*mem), NumPicZf_x, NumPicZf_y);
+	if(*mem)
+	{
+		ImageScaling(target, NUmPicSize, NumPic+DIVIDEUP(NUmPicSize[0]*NUmPicSize[1])*want_nub, x, NUmPicSize[1]*NumPicZf_y/100-(*mem), NumPicZf_x, NumPicZf_y);
+	}
+}
+
 
 /*
 	功能：字符串处理
@@ -694,7 +743,6 @@ uint8_t SetIndicatorSize(FontInfoType *FontInfo, menu_area *target, const uint8_
 	}
 	return changeFlag;
 }
-
 // ----------------- 串 口 ------------------
 
 static uint8_t MenuSerialBuf[MenuSerialBufSzie] = {0}; //串口缓冲区
@@ -703,6 +751,17 @@ static uint16_t MenuSerialShowPPos[2] = {0, 0}; //最后一个显示字符的下一个坐标
 
 static uint16_t SerialstartShow = 0; //显示起始位置
 static uint16_t MenuSerialShowP = 0; //显示截止位置
+static uint8_t stoprecive = DISABLE;
+
+// ENABLE 停止接收
+void MenuSerStopRecive(uint8_t enb)
+{
+	stoprecive = enb;
+}
+uint8_t SerisStop(void)
+{
+	return stoprecive;
+}
 
 /*
 	功能：显示串口文本
@@ -786,7 +845,7 @@ static void SerialstartN(uint8_t n)
 	}
 }
 //串口填充
-void MenuPaddingSerialBuf(uint8_t dat) 
+static void MenuPaddingSerialBuf(uint8_t dat) 
 {
 	uint8_t flog = 0;
 	
@@ -837,6 +896,32 @@ void MenuPaddingSerialBuf(uint8_t dat)
 	MenuSerialShowPPos[0]++;
 }
 
+static uint8_t isHexFlag = 0;
+uint8_t SerisHex(void)
+{
+	return isHexFlag;
+}
+void SerSetHex(uint8_t isHex)
+{
+	isHexFlag = isHex;
+}
+
+void MenuPaddingSerial(uint8_t rx)
+{
+	if(stoprecive == ENABLE) return;
+	if(isHexFlag == 0)
+	{
+		MenuPaddingSerialBuf(rx);
+	}
+	else
+	{
+		static const uint8_t hexascii[]={"0123456789ABCDEF"};
+
+		MenuPaddingSerialBuf(hexascii[rx/16]);
+		MenuPaddingSerialBuf(hexascii[rx%16]);
+		MenuPaddingSerialBuf(' ');
+	}
+}
 
 /*
 	串口字符串匹配
@@ -874,7 +959,6 @@ uint8_t SerStrMatching(const uint8_t *str)
 	}
 	return 0;
 }
-
 
 
 

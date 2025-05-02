@@ -3,17 +3,17 @@
         {
             "name": "menu_test",
             "includePath": [
-                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_18\\menu_test\\Core\\Inc",
-                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_18\\menu_test\\Drivers\\STM32F1xx_HAL_Driver\\Inc",
-                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_18\\menu_test\\Drivers\\STM32F1xx_HAL_Driver\\Inc\\Legacy",
-                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_18\\menu_test\\Drivers\\CMSIS\\Device\\ST\\STM32F1xx\\Include",
-                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_18\\menu_test\\Drivers\\CMSIS\\Include",
-                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_18\\menu_test\\multi_level_menu",
+                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_19\\menu_test\\Core\\Inc",
+                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_19\\menu_test\\Drivers\\STM32F1xx_HAL_Driver\\Inc",
+                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_19\\menu_test\\Drivers\\STM32F1xx_HAL_Driver\\Inc\\Legacy",
+                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_19\\menu_test\\Drivers\\CMSIS\\Device\\ST\\STM32F1xx\\Include",
+                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_19\\menu_test\\Drivers\\CMSIS\\Include",
+                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_19\\menu_test\\multi_level_menu",
                 "D:\\Keil_v5\\ARM\\ARMCC\\include",
                 "D:\\Keil_v5\\ARM\\ARMCC\\include\\rw",
-                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_18\\menu_test\\MDK-ARM",
-                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_18\\menu_test\\Core\\Src",
-                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_18\\menu_test\\Drivers\\STM32F1xx_HAL_Driver\\Src"
+                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_19\\menu_test\\MDK-ARM",
+                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_19\\menu_test\\Core\\Src",
+                "e:\\资料\\Program\\外设\\OLED\\oled_stm32_菜单\\multi_level menu_19\\menu_test\\Drivers\\STM32F1xx_HAL_Driver\\Src"
             ],
             "defines": [
                 "USE_HAL_DRIVER",

@@ -41,3 +41,5 @@ multi_level_menu\oled.o: ../Core/Inc/spi.h
 multi_level_menu\oled.o: ..\multi_level_menu\menu.h
 multi_level_menu\oled.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
 multi_level_menu\oled.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+multi_level_menu\oled.o: ..\multi_level_menu\oled.h
+multi_level_menu\oled.o: ..\multi_level_menu\menuconfig.h

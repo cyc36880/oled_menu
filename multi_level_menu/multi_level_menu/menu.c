@@ -6,6 +6,10 @@
 
 enum MenuState StatusInformation = Menu_noaction; //输入设备状态
 enum MenuState StatusInformationAlways = Menu_noaction; // 输入设备状态 <不会改变>
+
+uint8_t InuptEnable = ENABLE;
+
+
 /*
 	* 功能：输入设备状态
 */
@@ -44,33 +48,58 @@ static enum MenuState Scan(void)
 //	return Menu_noaction;
 }
 
+/*
+	0: 输入立即触发
+	1: 输入回弹后再触发，但不影响StatusInformationAlways
+*/
+#if 1
 static bool KeyState(enum MenuState *k)
 {
 	static enum MenuState KeySt = Menu_noaction;
-	static uint8_t count=0;
 	
 	if(KeySt != Scan())
 	{
 		HAL_Delay(1);
 		if(KeySt != Scan())
 		{
-			if(++count > 1){
-				count = 0;
-				*k = KeySt;
-				return 1;	
-			}
+			*k = KeySt;
 			KeySt = Scan();
 			StatusInformationAlways = KeySt;
+			return 1;
 		}
 	}
 	return 0;
 }
+#else
+static bool KeyState(enum MenuState *k)
+{
+	static enum MenuState KeySt = Menu_noaction;
+	
+	if(KeySt != Scan())
+	{
+		HAL_Delay(1);
+		if(KeySt != Scan())
+		{
+			KeySt = Scan();
+			*k = KeySt;
+			StatusInformationAlways = KeySt;
+			return 1;
+		}
+	}
+	return 0;
+}
+#endif
 
 /*
 	功能：输入设备扫描，该函数仅由系统调用
 */
 static void EquipmentState(void)
 {
+	if(InuptEnable == DISABLE) { //输入是否使能
+		StatusInformationAlways = Menu_noaction;
+		StatusInformation = Menu_noaction;
+		return;
+	}
 	if(KeyState(&StatusInformation)){ //按键扫描
 		if(StatusInformation != Menu_noaction){ //非空闲
 			ScreenPara.refresh = 1; //屏幕刷新
@@ -94,7 +123,7 @@ unsigned char DisplayBuff[BUFFWEIGH * BUFFHIGH] = {0};
 
 
 //清空显示缓存
-static void ClearnBuff(void)
+void ClearnBuff(void)
 {
 	unsigned int i, j = BUFFWEIGH * BUFFHIGH;
 	for(i=0; i<j; i++)
@@ -120,18 +149,19 @@ void *MenuMalloc(uint16_t size)
 	return addr;
 }
 
+
 /*
-*	功能：注册或添加菜单 
+*	功能：对已有菜单注册或添加菜单 
+*	target：已有的菜单
 *	x, y, width, high: 为注册菜单单元的位置与大小 
 *	checked: 能否被选中，1能 0否 
 *	transfer：为 NULL 注册的是菜单头，填入菜单地址为其尾加入 
 */
-menu_area * AddToMenuList(int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer)
+menu_area *SetMenu(menu_area *target, int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer)
 {
-	menu_area *p;
+	menu_area *p = target;
 	menu_area *k;
 	
-	p = (menu_area *) MenuMalloc(sizeof(menu_area)); //申请内存空间
 	if(!p) return NULL;
 	if(transfer != NULL)  //尾部加入 
 	{
@@ -151,15 +181,66 @@ menu_area * AddToMenuList(int16_t x, int16_t y, uint16_t width, uint16_t high, b
 	p->width = width;
 	p->high = high;
 	p->checked =  checked; // 能否选中 
-	p->menulistend = NULL; //菜单列表结束
+	p->menulistend = DISENBLE; //菜单列表结束
 	p->next = NULL;      //下一个
 	p->subclass = NULL;  //子类 
 	p->father = NULL;    // 父类 
 	p->menuinterface = NULL; // 菜单内容
-	p->specialfeatures = NULL; //特使功能
-	p->specfeattrigflag = NULL;
+	p->specialfeatures = NULL; //特殊功能
+	p->specfeattrigflag = NULL;//特殊功能触发标志
 	p->menu_time = NULL; //时间队列
 	return p;
+}
+
+/*
+*	功能：注册或添加菜单 
+*	x, y, width, high: 为注册菜单单元的位置与大小 
+*	checked: 能否被选中，1能 0否 
+*	transfer：为 NULL 注册的是菜单头，填入菜单地址为其尾加入 
+*/
+menu_area * AddToMenuList(int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer)
+{
+	menu_area *p;
+	
+	p = (menu_area *) MenuMalloc(sizeof(menu_area)); //申请内存空间
+	
+	return SetMenu(p, x, y, width, high, checked, transfer);
+}
+
+/*
+	功能：快速目标菜单下方仿制
+	target：要仿制的目标菜单
+	source：拥有的菜单
+	kind：类型 0:有超出部分立即按照头创建 1:只有完全在屏幕下方才按头创建
+*/
+
+menu_area * FastSimilarMenu(menu_area *target, menu_area *source, bool kind)
+{
+	if(!source) return NULL;
+	if(!target) {
+		return SetMenu(source, 0, 0, 0, 0, ENABLE, NULL);
+	}
+	target = FindMeunListHeard(target);
+	menu_area *p = FindMeunListTail(target); 
+	
+	if(!kind) { //超出屏幕，立即
+		if(p->y+p->high*2 > SCREENHIGH) {
+			p->menulistend = ENABLE;
+			return SetMenu(source, target->x, target->y, target->width,target->high, target->checked, p);
+		}
+		else {
+			return SetMenu(source, p->x, p->y+p->high, p->width,p->high, p->checked, p);
+		}
+	}
+	else {
+		if(p->y+p->high >= SCREENHIGH) {
+			p->menulistend = ENABLE;
+			return SetMenu(source, target->x, target->y, target->width,target->high, target->checked, p);
+		}
+		else {
+			return SetMenu(source, p->x, p->y+p->high, p->width,p->high, p->checked, p);
+		}
+	}
 }
 
 /**
@@ -260,7 +341,7 @@ menu_area *NextCancheMenuList(menu_area *target, int16_t num)
 	for(i=0; i<j;)
 	{
 		p=MenuListAddressing(p, num<0, 1);
-		if(p==NULL) return target;
+		if(p==NULL || p==target) return target;
 		if(p->checked == 1) i++;
 	}
 	
@@ -342,7 +423,7 @@ menu_area *MenuListShowHead(menu_area *target)
 	for( ; ; )
 	{
 		if(targetmenu->id == MENUHEARDID) return targetmenu;//上一个为头
-		if(targetmenu->previous->menulistend == 1) return targetmenu; //上一个为结尾
+		if(targetmenu->previous->menulistend == ENABLE) return targetmenu; //上一个为结尾
 		targetmenu = targetmenu->previous;
 	}
 }
@@ -362,13 +443,13 @@ menu_area *MenuListShowTail(menu_area *target)
 	{
 		if(targetmenu->next == NULL) return targetmenu; //下一个为空
 		if(targetmenu->next->id == MENUHEARDID) return targetmenu;//到达菜单列表尾
-		if(targetmenu->menulistend == 1) return targetmenu;//显示菜单尾
+		if(targetmenu->menulistend == ENABLE) return targetmenu;//显示菜单尾
 		targetmenu = targetmenu->next;
 	}
 }
 
 /*
-	功能： 目标菜单首位相连，地址为空跳过 
+	功能： 目标菜单首尾相连，地址为空跳过 
 	target：所在菜单列表的任一菜单 
 */
 void MakeMenuListRing(menu_area *target)
@@ -506,11 +587,11 @@ void MenuSetPoint(menu_area *target, int16_t x, int16_t y, bool w_b)
 */
 static void DrawMenuRectangle(menu_area *target)
 {
-	uint16_t x1=0, y1=0, x2=0, y2=0;
-	
-	if(target == NULL) return;
-	
+	int16_t x1=0, y1=0, x2=0, y2=0;
+		
 	if(target->width<=0 || target->high<=0) return;
+	if(target->x>=SCREENWIDTH || target->y>=SCREENHIGH) return;
+	if(target->x+target->width<0 || target->y+target->high<0) return;
 	
 	x1 = target->x;
 	y1 = target->y;
@@ -540,7 +621,7 @@ static menu_area *MenuListShowHeadForHeart(menu_area *target)
 	{
 		if(targetmenu->previous == NULL) return targetmenu; //上一个不存在
 		if(targetmenu->id == MENUHEARDID) return targetmenu;//上一个为头
-		if(targetmenu->previous->menulistend == 1) return targetmenu; //上一个为结尾
+		if(targetmenu->previous->menulistend == ENABLE) return targetmenu; //上一个为结尾
 		targetmenu = targetmenu->previous;
 	}
 }
@@ -555,7 +636,7 @@ static menu_area *MenuListShowTailForHeart(menu_area *target)
 	{
 		if(targetmenu->next == NULL) return targetmenu; //下一个为空
 		if(targetmenu->next->id == MENUHEARDID) return targetmenu;//到达菜单列表尾
-		if(targetmenu->menulistend == 1) return targetmenu;//显示菜单尾
+		if(targetmenu->menulistend == ENABLE) return targetmenu;//显示菜单尾
 		targetmenu = targetmenu->next;
 	}
 }
@@ -568,7 +649,7 @@ static menu_area *MenuListShowTailForHeart(menu_area *target)
 	如果没有使用特殊功能中的时间列表功能，此标志不必管
 	注意：请在菜单初始化的结尾置一该标志，防止中断与main同时调用相关函数
 */
-bool MenuHeartTimeStart = 0; //时间列表开始标志
+bool MenuHeartTimeStart = DISABLE; //时间列表开始标志
 static bool RefreshFlagForHeart = 0; //时间列表刷新标志
 
 void MenuHeartTime(void)
@@ -578,7 +659,7 @@ void MenuHeartTime(void)
 	
 	bool refreshflag = 0; //屏幕刷新标志，0不刷新，1刷新
 	
-	if(!MenuHeartTimeStart) return; //是否开始
+	if(MenuHeartTimeStart==DISABLE) return; //是否开始
 	
 	if(p==NULL) return; //检查地址是否有效
 	
@@ -616,9 +697,7 @@ static void MenuListInterface(void)
 {
 	menu_area *p = TargetMenu;
 	menu_area *pTail = NULL;
-	
-	if(p==NULL) return; //检查地址是否有效
-	
+		
 	p = MenuListShowHead(p); //显示头
 	pTail = MenuListShowTail(p);//显示尾
 	
@@ -660,7 +739,6 @@ static void SpecialFunctionRun(menu_area *target)
 		lastshowmenuheard = nowshowmenuheard;
 		lastshowmenutail = MenuListShowTail(lastshowmenuheard);	
 	}
-	if(!lastmenuheard || !lastmenutail || !lastshowmenuheard || !lastshowmenutail) return;
 	
 	if( lastmenuheard != nowmenuheard){ //切换菜单级
 		for( p=lastmenuheard; ; ){ //上一级退出执行
@@ -739,7 +817,6 @@ static void MenuListOverallRun(menu_area *target)
 	
 	if(!MenuListOverallP) return; //是否有全局
 	p = FindMeunListHeard(target);
-	if(!p) return; //是否有菜单
 	if( !(p->specialfeatures & MenuHaveOverall) ) return; //是否创建
 	
 	while(MenuListOverallP->Affiliation != p){ //找到对应列表头的全局
@@ -765,8 +842,15 @@ static void StateToPointer(void)
 			TargetMenu=NextCancheMenuHeard(TargetMenu, 1);
 			break;
 		case Menu_Father:  
-			if(TargetMenu->father != NULL) StatusInformation = Menu_noaction; // 防止切换菜单列表时立即运行函数内部指令
-			TargetMenu=NextCancheMenuHeard(TargetMenu, -1);
+			// 0: 返回至菜单头的父类   1: 返回至当前菜单的父类
+			#if 0
+				if(TargetMenu->father != NULL) StatusInformation = Menu_noaction; // 防止切换菜单列表时立即运行函数内部指令
+				TargetMenu=NextCancheMenuHeard(TargetMenu, -1);
+			#else
+				TargetMenu = FindMeunListHeard(TargetMenu);
+				if(TargetMenu->father != NULL) StatusInformation = Menu_noaction; // 防止切换菜单列表时立即运行函数内部指令
+				TargetMenu=NextCancheMenuHeard(TargetMenu, -1);
+			#endif
 			break;
 		default:break;
 	}
@@ -782,7 +866,7 @@ static void MenuCheckedStyle(menu_area *target)
 }
 
 /*
-	功能：菜单运行函数。 the end 之前，越靠后屏幕显示优先级越高
+	功能：菜单运行函数。 刷新屏幕 之前，越靠后屏幕显示优先级越高
 */
 void MenuRun(void)
 {
@@ -793,14 +877,15 @@ void MenuRun(void)
 		ScreenPara.refresh = 1;
 	}
 	
-	if(ScreenPara.refresh)
+	if(ScreenPara.refresh && TargetMenu)
 	{
 		StateToPointer(); // 设备输入状态改变实时目标菜单指针
 		
+		MenuListOverallRun(TargetMenu); //菜单全局
 		SpecialFunctionRun(TargetMenu); //特殊功能运行
 		MenuListInterface(); //依次显示当前菜单列表
 		MenuCheckedStyle(TargetMenu);//菜单选中风格
-		MenuListOverallRun(TargetMenu); //菜单全局
+		
 		disp_flush();// 刷新屏幕
 		
 		ClearnBuff(); // 清空缓存

@@ -29,7 +29,7 @@ void MenuShowAsc(menu_area *target,int16_t x, int16_t y, uint8_t asc)
 	uint8_t wight = font_SizeInf[0];
 	uint8_t high  = font_SizeInf[1];
 	
-	if(asc > '~' || asc < ' ') asc = ' '; //大于显示范围
+	if(asc > '~' || asc < ' ') asc = ' '; //不在显示范围
 	c=asc-' ';   // ' '=32,ASCII码表
 	for(h=0; h<high; h++)//字高
 	{
@@ -56,7 +56,7 @@ static uint32_t oled_pow(uint8_t m,uint8_t n)
 	uint32_t result=1;	 
 	while(n--)result*=m;    
 	return result;
-}	
+}
 
 /*
 	功能：在菜单中写Asc数字，target为NULL在屏幕写
@@ -123,42 +123,26 @@ void MenuShowAscStr(menu_area *target, int16_t x, int16_t y, const uint8_t *str)
 target：菜单指针
 x：文本的左上角x坐标
 y：文本的左上角y坐标
-ascw：显示宽度 《0为自动》，<以字符位单位>
-asch：显示高度 《0为自动》，<以字符位单位>
+ascw：显示宽度 《字符个数！！》
 str：显示的数据串
-num：显示的个数，《0为自动》
 注意：数据\n为回车，其它未识别数据显示为空格，不支持中文显示！！
 */
 
-void CharacterText(menu_area *target, int16_t x, int16_t y, uint8_t ascw, uint8_t asch, const uint8_t *str, uint16_t num)
+void CharacterText(menu_area *target, int16_t x, int16_t y, uint16_t ascw, const uint8_t *str)
 {
 	uint8_t showbuf[2] = {0, 0};
 	uint16_t strnum = 0;
 	uint16_t showx=0, showy=0;
-	uint8_t tascw = ascw, tasch = asch;
 	const uint8_t *s = str;
+	uint16_t num = 0;
 	
-	if(num == 0) {
-		while(*s++) {
-			num++;
-		}
+	while(*s++) {
+		num++;
 	}
-	if(tasch == 0) { //高度为零
-		if(tascw == 0) { //宽度为零，高度最大
-			asch = -1;
-		}
-		else { //否则根据宽度自动运算
-			asch = num/ascw + 1;
-		}
+
+	if(ascw == 0) {
+		ascw = -1;
 	}
-	if(tascw == 0) { //宽度为零
-		if(tasch == 0) { //宽度为零，高度最大
-			ascw = -1;
-		}
-		else { //否则根据宽度自动运算
-			ascw = num/asch + 1;
-		}
-	};
 	
 	while(num)
 	{
@@ -166,9 +150,7 @@ void CharacterText(menu_area *target, int16_t x, int16_t y, uint8_t ascw, uint8_
 		showbuf[0] = str[strnum++];
 		if(showbuf[0] == '\n') {
 			showx = 0;
-			if(++showy >= asch) {
-				break;
-			}
+			showy++;
 			continue;
 		}
 		
@@ -176,9 +158,7 @@ void CharacterText(menu_area *target, int16_t x, int16_t y, uint8_t ascw, uint8_
 		
 		if(++showx >= ascw) {
 			showx = 0;
-			if(++showy >= asch) {
-				break;
-			}
+			showy++;
 		}
 	}
 }
@@ -301,7 +281,6 @@ static void MenuHZ16x16Str(menu_area *target, int16_t x, int16_t y, uint8_t *s_d
 	}
 }
 // 汉字 Asc 混合显示，target为NULL在屏幕写
-//@ret:写了多少字
 void MenuHzAndAsc(menu_area *target, int16_t x, int16_t y, const uint8_t *s_dat)
 {
 	unsigned int s_datlen = mystrlen(s_dat);
@@ -334,43 +313,26 @@ void MenuHzAndAsc(menu_area *target, int16_t x, int16_t y, const uint8_t *s_dat)
 target：菜单指针
 x：文本的左上角x坐标
 y：文本的左上角y坐标
-ascw：显示宽度 《0为自动》，<以字符位单位>
-asch：显示高度 《0为自动》，<以字符位单位>
+ascw：显示宽度 
 str：显示的数据串
-num：显示的个数，《0为自动》
 注意：数据\n为回车，其它未识别数据显示为空格，行间隔以最大的字体高度执行！！
 */
-void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint8_t ascw, uint8_t asch, const uint8_t *str, uint16_t num)
+void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint16_t ascw, const uint8_t *str)
 {
 	uint8_t showbuf[3] = {0, 0, 0};
 	uint16_t strnum = 0;
 	uint16_t showx=0, showy=0;
-	uint8_t tascw = ascw, tasch = asch;
 	const uint8_t *s = str;
 	uint8_t offset = font_SizeInf[1] < 16 ? 16 : font_SizeInf[1]; //文本上下偏移量
+	uint16_t num = 0;
 	
-	
-	if(num == 0) {
-		while(*s++) {
-			num++;
-		}
+	while(*s++) {
+		num++;
 	}
-	if(tasch == 0) { //高度为零
-		if(tascw == 0) { //宽度为零，高度最大
-			asch = -1;
-		}
-		else { //否则根据宽度自动运算
-			asch = num/ascw + 1;
-		}
+
+	if(ascw == 0) {
+		ascw = -1;
 	}
-	if(tascw == 0) { //宽度为零
-		if(tasch == 0) { //宽度为零，高度最大
-			ascw = -1;
-		}
-		else { //否则根据宽度自动运算
-			ascw = num/asch + 1;
-		}
-	};
 	
 	while(num)
 	{
@@ -379,15 +341,14 @@ void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint8_t ascw, uint8
 		if(showbuf[0] > 0x7f) { //判断是否为中文
 			showbuf[1] = str[strnum + 1];
 			strnum += 2;
+			num--;
 		}
 		else {
 			strnum += 1;
 		}
 		if(showbuf[0] == '\n') {
 			showx = 0;
-			if(++showy >= asch) {
-				break;
-			}
+			showy++;
 			continue;
 		}
 		
@@ -397,15 +358,12 @@ void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint8_t ascw, uint8
 			showx += 16;
 		}
 		else { //英文显示
-			MenuShowAscStr(target, x+ showx, y + showy*offset + (16 - font_SizeInf[1]), showbuf);
+			MenuShowAscStr(target, x + showx, y + showy*offset + (16 - font_SizeInf[1]), showbuf);
 			showx += font_SizeInf[0];
 		}
-		
-		if(showx >= ascw*8) { //宽度超出
+		if(showx >= ascw) { //宽度超出
 			showx = 0;
-			if(++showy >= asch) {
-				break;
-			}
+			showy++;
 		}
 	}
 }
@@ -416,7 +374,7 @@ void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint8_t ascw, uint8
 
 static uint8_t MenuSerialBuf[MenuSerialBufSzie] = {0}; //串口缓冲区
 uint16_t MenuSerialRxNum = 0; //接收数量，最大为MenuSerialBufSzie
-
+static uint16_t MenuSerialShowPPos[2] = {0, 0}; //最后一个显示字符的下一个坐标
 const uint16_t windowsszie = MENUSERIALWINDOWWIDTH*MENUSERIALWINDOWHIGH; //窗口大小
 
 static uint16_t SerialstartShow = 0; //显示起始位置
@@ -452,6 +410,13 @@ void SerialCharacterText(menu_area *target, int16_t x, int16_t y)
 			strnum = 0;
 		}
 		if(showbuf[0] == '\0') showbuf[0] = ' ';
+		if(showbuf[0] == '\n') {
+			showx = 0;
+			if(++showy >= MENUSERIALWINDOWHIGH) {
+				break;
+			}
+			continue;
+		}
 		MenuShowAscStr(target,  x + showx*font_SizeInf[0],  y + showy*font_SizeInf[1], showbuf);
 		
 		if(++showx >= MENUSERIALWINDOWWIDTH) {
@@ -468,26 +433,87 @@ void ClearnSerialShowBuf(void)
 	MenuSerialRxNum = 0;
 	MenuSerialShowP = 0;
 	SerialstartShow = 0;
+	MenuSerialShowPPos[0] = 0;
+	MenuSerialShowPPos[1] = 0;
 }
+/*
+	功能：起始刷新后移行
+	n：后移的行数
+*/
+static void SerialstartN(uint8_t n)
+{
+	uint8_t i = 0;
 
+	while(n--) {
+		i = MENUSERIALWINDOWWIDTH;
+		while(i--) {
+			if(MenuSerialBuf[SerialstartShow] == '\n') {
+				SerialstartShow++;
+				if(SerialstartShow >= MenuSerialBufSzie) {
+					SerialstartShow = SerialstartShow - MenuSerialBufSzie;
+				}
+				break;
+			}
+			SerialstartShow++;
+			if(SerialstartShow >= MenuSerialBufSzie) {
+				SerialstartShow = 0;
+			}
+
+		}
+	}
+}
 //串口填充
 void MenuPaddingSerialBuf(uint8_t dat) 
 {
+	uint8_t flog = 0;
+	
 	MenuSerialBuf[MenuSerialShowP] = dat;
-	if(++MenuSerialRxNum > MenuSerialBufSzie) {
+	if(++MenuSerialRxNum >= MenuSerialBufSzie) {
 		MenuSerialRxNum = MenuSerialBufSzie;
 	}
-
 	if(++MenuSerialShowP >= MenuSerialBufSzie) { //显示截止位置
 		MenuSerialShowP = 0;
 	}
-	if(MenuSerialRxNum > windowsszie) {
-		SerialstartShow += MENUSERIALWINDOWWIDTH;
-		if(SerialstartShow >= MenuSerialBufSzie) {
-			SerialstartShow = SerialstartShow - MenuSerialBufSzie;
+	
+	//接收\n字符
+	if(dat == '\n') {
+		if(MenuSerialShowPPos[0] == MENUSERIALWINDOWWIDTH) { //同时一行填充满
+			MenuSerialShowPPos[1]+=2;
 		}
-		MenuSerialRxNum = windowsszie - MENUSERIALWINDOWWIDTH+1;
+		else { //正常行移
+			MenuSerialShowPPos[1]+=1;
+		}
+		MenuSerialShowPPos[0] = 0;
+		
+		if(MenuSerialShowPPos[1] >= MENUSERIALWINDOWHIGH) { //超出行显示边界
+			SerialstartN(MenuSerialShowPPos[1] - MENUSERIALWINDOWHIGH + 1); //移动起始显示行
+			MenuSerialShowPPos[1] = MENUSERIALWINDOWHIGH-1;
+		}
+		return;
 	}
+	
+	//除\n外的其它字符的接收
+	if(MenuSerialShowPPos[0] >= MENUSERIALWINDOWWIDTH) {
+		if(MenuSerialShowPPos[1] == MENUSERIALWINDOWHIGH-1) {
+			if(MenuSerialShowPPos[0] == MENUSERIALWINDOWWIDTH) {
+					flog = 1;
+			}
+		}
+		else {
+			if(++MenuSerialShowPPos[1] >= MENUSERIALWINDOWHIGH) {
+				MenuSerialShowPPos[1] -= 1;
+				flog = 1;
+			}
+		}
+		if(flog) {
+			flog = 0;
+			SerialstartN(1);
+		}
+		MenuSerialShowPPos[0] = 0;
+	}
+	
+	MenuSerialShowPPos[0]++;
+
 }
 
 

@@ -101,8 +101,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	__HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
 	
-	OLED_Init(); // OLED初始化
-	MakeMenu(); //菜单列表初始化
+	MenuInit();//菜单初始化
+	
 	HAL_TIM_Base_Start_IT(&htim2);
 	HAL_ADC_Start_DMA(&hadc1, adcbuf, 2);
   /* USER CODE END 2 */

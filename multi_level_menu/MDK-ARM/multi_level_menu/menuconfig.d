@@ -41,6 +41,7 @@ multi_level_menu\menuconfig.o: ..\multi_level_menu\menu.h
 multi_level_menu\menuconfig.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
 multi_level_menu\menuconfig.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
 multi_level_menu\menuconfig.o: ..\multi_level_menu\oled.h
+multi_level_menu\menuconfig.o: ..\multi_level_menu\menuconfig.h
 multi_level_menu\menuconfig.o: ..\multi_level_menu\oledfont.h
 multi_level_menu\menuconfig.o: ..\multi_level_menu\menufontshow.h
 multi_level_menu\menuconfig.o: ..\multi_level_menu\Graphicalfunctions.h

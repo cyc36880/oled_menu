@@ -42,4 +42,5 @@ multi_level_menu\graphicalfunctions.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32
 multi_level_menu\graphicalfunctions.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 multi_level_menu\graphicalfunctions.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
 multi_level_menu\graphicalfunctions.o: ../Core/Inc/spi.h
+multi_level_menu\graphicalfunctions.o: ..\multi_level_menu\menu.h
 multi_level_menu\graphicalfunctions.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\math.h

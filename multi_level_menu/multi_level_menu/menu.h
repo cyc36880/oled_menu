@@ -22,6 +22,9 @@
 
 #define MENUHEARDID 1 //菜单列表起始ID
 
+#define ENABLE   1 //使能
+#define DISENBLE 0 //失能
+
 // 菜单操作
 enum MenuState
 {
@@ -92,10 +95,13 @@ typedef struct MENULISTOVERALL
 
 //功能：注册或添加菜单 
 menu_area *AddToMenuList(int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer);
+//功能：对已有菜单注册或添加菜单 
+menu_area *SetMenu(menu_area *target, int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer);
+//功能：快速目标菜单下方仿制  0:有超出部分立即按照头创建 1:只有完全在屏幕下方才按头创建
+menu_area *FastSimilarMenu(menu_area *target, menu_area *source, bool kind);
 
 //功能：链接到父类
 void LinkToParentClass(menu_area *target, menu_area *source);
-
 
 
 //功能：对菜单上下偏移寻址 
@@ -124,8 +130,7 @@ menu_area *MenuListShowTail(menu_area *target);
 
 
 
-
-//功能：目标菜单首位相连，空指针跳过
+//功能：目标菜单首尾相连，空指针跳过
 void MakeMenuListRing(menu_area *target);
 
 //功能：菜单列表始终执行函数
@@ -138,15 +143,25 @@ void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms);
 bool TriggerCheck(menu_area *target, enum SpecialInformation function);
 
 
+
+
+
 extern menu_area * TargetMenu; // 实时目标菜单
+
 
 extern enum MenuState StatusInformation; //输入设备状态
 extern enum MenuState StatusInformationAlways; // 输入设备状态 <不会改变>
+extern uint8_t InuptEnable; //输入使用
+
 
 extern uint32_t MenuSize;//菜单申请的空间大小
 
-
-
+/*
+* 输入要显示占用的高度（high）或宽度（width），输出左上角的x或y相对于
+* 菜单中心的坐标
+*/
+#define MenuCenterX(target,w) ((target->width - (w)) / 2)
+#define MenuCenterY(target,h) ((target->high - (h)) / 2)
 
 
 // =========================== 屏 幕 ====================================
@@ -187,10 +202,15 @@ extern TypedefScreen ScreenPara; // 屏幕具体参数
 
 // 功能：在目标菜单的相对位置画点
 void MenuSetPoint(menu_area *target, int16_t x, int16_t y, bool w_b); 
+//清空显示缓存
+void ClearnBuff(void);
 
-
-
-
+/*
+* 输入要显示占用的高度（high）或宽度（width），输出左上角的x或y相对于
+* 屏幕中心的坐标
+*/
+#define MenuScreenCenterX(width) ((SCREENWIDTH - (width)) / 2)
+#define MenuScreenCenterY(high)  ((SCREENHIGH - (high)) / 2)
 
 
 // ============================== 其 它 ==================================

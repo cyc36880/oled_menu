@@ -7,23 +7,20 @@
 
 void test1_1(menu_area *target);
 
-TypLineChartMap Map = {120, 40, 20}; //折线图
+menu_area menutest1;
 
 
 /*
 	功能：初始化菜单列表 <此函数名不可修改>
 */
-void MakeMenu(void)
+static void MakeMenu(void)
 {
-	ClearnLineChartMapDat(&Map); //折线图内存清零
-	
-	TargetMenu = AddToMenuList(34, 0, 32, 16, 1, NULL);
+	TargetMenu = SetMenu(&menutest1, MenuScreenCenterX(32), 0, 32, 16, 1, NULL); //使用以创建好的菜单配置
 	TargetMenu->menuinterface = test1_1;
 	AddToSpecialFunction(TargetMenu, MenuTime, 100);
-	
-	MenuHeartTimeStart = 1;//菜单心跳
-}
 
+	MenuHeartTimeStart = ENABLE;//菜单心跳
+}
 
 /*
 	功能：菜单显示的具体实现函数
@@ -31,42 +28,50 @@ void MakeMenu(void)
 */
 void test1_1(menu_area *target)
 {
-
 	static uint8_t h = 4;
-	static uint8_t r0 = 5;
+
 	
-	int16_t *p;
 	//SetFont(F8X16, F8X16_SizeInf);//设置字体
-	SetFont(F6X8, F6X8_SizeInf);//设置字体
+//	SetFont(F6X8, F6X8_SizeInf);//设置字体
+	
 	
 	if(TriggerCheck(target, MenuTime)) { //时间列表
 		
+		
 		if(StatusInformationAlways == Menu_up) {
-			ClearnSerialShowBuf();
 			h++;
+			ClearnSerialShowBuf();
 		}
 		if(StatusInformationAlways == Menu_down) {
 			h--;
 		}
-		if(--r0 == 0) {
-			r0 = 5;
-		}
-		AddDatToLineChartMap(&Map, h); //折线图填充数据
 	}
+	
 	MenuShowNum(target, 0, 0, 0, h);
-	
-	p = LineChart(&Map, 0, 20); //折线图
-	
-	if(Map.RxNum) { //接收数量为零不显示
-		DrawCircle(p[0], p[1], r0);
+	if(!MenuSerialRxNum) {
+		MenuShowAscStr(NULL, 25, 25, "wait...");
 	}
-	GRAPHICSSHOWMANNER = GraphicsRollColor;
-	PictureShow(NULL, picturesize, picture0, 20, 16); //图片显示
-	GRAPHICSSHOWMANNER = GraphicsNormal;
+	else {
+		SetFont(F6X8, F6X8_SizeInf);//设置字体
+		SerialCharacterText(NULL, 20, 20);
+		SetFont(F8X16, F8X16_SizeInf);//设置字体
+	}
 }
 
 
 
+
+
+
+
+
+
+//功能：初始化菜单相关内容
+void MenuInit(void)
+{
+	OLED_Init(); // OLED初始化
+	MakeMenu(); //菜单列表初始化
+}
 
 
 

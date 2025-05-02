@@ -42,5 +42,6 @@ multi_level_menu\menufontshow.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_h
 multi_level_menu\menufontshow.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 multi_level_menu\menufontshow.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
 multi_level_menu\menufontshow.o: ../Core/Inc/spi.h
+multi_level_menu\menufontshow.o: ..\multi_level_menu\menu.h
 multi_level_menu\menufontshow.o: ..\multi_level_menu\Graphicalfunctions.h
 multi_level_menu\menufontshow.o: ..\multi_level_menu\oledfont.h

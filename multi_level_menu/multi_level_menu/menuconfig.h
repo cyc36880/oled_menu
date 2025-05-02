@@ -3,13 +3,40 @@
 
 
 
+/************************
+	include from outside
+************************/
+
 #include "main.h" //HAL函数库
 #include "spi.h" //HAL函数库
 
+#include "menu.h"
+
+
+
+
+/************************
+	extern from outside
+************************/
+
 extern uint32_t adcbuf[];
 
-//功能：初始化菜单列表
-void MakeMenu(void);
+
+
+
+
+/************************
+	extern from interior
+************************/
+
+//功能：初始化菜单相关内容
+void MenuInit(void);
+
+
+
 
 #endif
+
+
+
 

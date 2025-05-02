@@ -1,0 +1,12 @@
+{
+  "files.associations": {
+    "*.cpp": "cpp",
+    "graphicalfunctions.h": "c",
+    "menu.h": "c",
+    "functional": "c",
+    "menufontshow.h": "c",
+    "menu_tool.h": "c"
+  }
+  "files.encoding": "gb2312",
+  "files.autoGuessEncoding":false,
+}

@@ -102,7 +102,7 @@ static void EquipmentState(void)
 	}
 	if(KeyState(&StatusInformation)){ //按键扫描
 		if(StatusInformation != Menu_noaction){ //非空闲
-			ScreenPara.refresh = 1; //屏幕刷新
+			ScreenPara.refresh = ENABLE; //屏幕刷新
 		}
 	}
 }
@@ -133,7 +133,7 @@ void ClearnBuff(void)
 
 // ========================== 菜 单 ==================================
 
-uint32_t MenuSize = 0;//菜单申请的空间大小
+uint32_t MenuMallocSize = 0;//菜单申请的空间大小
 /*
 	功能：菜单申请空间
 	size：申请空间的字节数
@@ -144,7 +144,7 @@ void *MenuMalloc(uint16_t size)
 	void *addr;
 	addr = malloc(size);
 	if(addr) {
-		MenuSize += size;
+		MenuMallocSize += size;
 	}
 	return addr;
 }
@@ -181,7 +181,7 @@ menu_area *SetMenu(menu_area *target, int16_t x, int16_t y, uint16_t width, uint
 	p->width = width;
 	p->high = high;
 	p->checked =  checked; // 能否选中 
-	p->menulistend = DISENBLE; //菜单列表结束
+	p->menulistend = DISABLE; //菜单列表结束
 	p->next = NULL;      //下一个
 	p->subclass = NULL;  //子类 
 	p->father = NULL;    // 父类 
@@ -211,10 +211,10 @@ menu_area * AddToMenuList(int16_t x, int16_t y, uint16_t width, uint16_t high, b
 	功能：快速目标菜单下方仿制
 	target：要仿制的目标菜单
 	source：拥有的菜单
-	kind：类型 0:有超出部分立即按照头创建 1:只有完全在屏幕下方才按头创建 2:仅在最后下方仿造
+	mod：类型 0:有超出部分立即按照头创建 1:只有完全在屏幕下方才按头创建 2:仅在最后下方仿造
 */
 
-menu_area * FastSimilarMenu(menu_area *target, menu_area *source, uint8_t kind)
+menu_area * FastSimilarMenu(menu_area *target, menu_area *source, uint8_t mod)
 {
 	if(!source) return NULL;
 	if(!target) {
@@ -223,7 +223,7 @@ menu_area * FastSimilarMenu(menu_area *target, menu_area *source, uint8_t kind)
 	target = FindMeunListHeard(target);
 	menu_area *p = FindMeunListTail(target); 
 	
-	if(kind == 0)  { //超出屏幕，立即
+	if(mod == 0)  { //超出屏幕，立即
 		if(p->y+p->high*2 > SCREENHIGH) {
 			p->menulistend = ENABLE;
 			return SetMenu(source, target->x, target->y, target->width,target->high, target->checked, p);
@@ -232,7 +232,7 @@ menu_area * FastSimilarMenu(menu_area *target, menu_area *source, uint8_t kind)
 			return SetMenu(source, p->x, p->y+p->high, p->width,p->high, p->checked, p);
 		}
 	}
-	else if(kind == 1){
+	else if(mod == 1){
 		if(p->y+p->high >= SCREENHIGH) {
 			p->menulistend = ENABLE;
 			return SetMenu(source, target->x, target->y, target->width,target->high, target->checked, p);
@@ -246,17 +246,49 @@ menu_area * FastSimilarMenu(menu_area *target, menu_area *source, uint8_t kind)
 	}
 }
 
+/*
+	功能：批量初始化
+	target：所要附属于列表的任一菜单指针
+	source：menu_area类型的数组
+	n：数组个数
+	mod：类型 0:有超出部分立即按照头创建 1:只有完全在屏幕下方才按头创建 2:仅在最后下方仿造
+	menuinterface：统一链接的函数
+	@ret：NULL
+
+	注意：当 target==source 时， 两都会赋予menuinterface，不等时，仅source中会被赋予
+*/
+
+void BatchFastSimilarMenu(menu_area *target, menu_area source[], uint16_t n, uint8_t mod, void (*menuinterface)(struct MENU_AREA *target))
+{
+	uint16_t i = 0;
+	
+	if(target == NULL) return;
+	
+	if(target==source && n!=0) {
+		source = &source[1];
+		n-=1;
+		target->menuinterface = menuinterface;
+	}
+	
+	if(n>=1) {
+		FastSimilarMenu(target, &source[0], mod)->menuinterface=menuinterface;
+		for(i=1; i<n; i++) {
+			FastSimilarMenu(&source[i-1], &source[i], mod)->menuinterface=menuinterface;
+		}
+	}
+}
+
 /**
  *  功能：链接到父类
  *  target：目标地址
  *  source：源地址 
  * 
  **/
-void LinkToParentClass(menu_area *target, menu_area *source)
+void LinkToParentClass(menu_area *father, menu_area *sub)
 {
-	if(target==NULL || source==NULL) return; //检查地址是否有效
-	target->subclass = source;
-	source->father = target;
+	if(father==NULL || sub==NULL) return; //检查地址是否有效
+	father->subclass = sub;
+	sub->father = father;
 }
 
 /**
@@ -452,6 +484,37 @@ menu_area *MenuListShowTail(menu_area *target)
 }
 
 /*
+	功能：找到为ID的菜单
+	target：所在菜单列表的任一菜单指针
+	id：想要找到的id
+	mod：	0：无则返回原指针，1：无则返回NULL
+	@ret：找到的菜单指针
+*/
+menu_area *FindMenuOfID(menu_area *target, uint16_t id, bool mod)
+{
+	menu_area *p = target;
+	uint16_t i=0;
+	
+	if(target == NULL) return NULL;
+	if(id < MENUHEARDID) return (mod?NULL:target);
+	
+	if(id <= target->id) {
+		for(i=0; i<(target->id - id); i++) {
+			p = p->previous;
+		}
+		return p;
+	}
+	else {
+		for(i=0; i<(id - target->id); i++) {
+			p = p->next;
+			if(p==NULL || p->id==MENUHEARDID) return (mod?NULL:target);
+		}
+		return p;
+	}
+}
+
+
+/*
 	功能： 目标菜单首尾相连，地址为空跳过 
 	target：所在菜单列表的任一菜单 
 */
@@ -481,9 +544,23 @@ void MakeMenuListRing(menu_area *target)
 /*
 	功能：将菜单添加入时间列表，在该界面下，每ms执行指定菜单
 	target：指定菜单
+	menutime_obj: 已有的时间
+	function：仅时间相关的宏
 	ms：间隔时间
-	注意：该函数将占用 specialfeatures，执行指定列表时，会将 specialfeatures 置 1， 
-		  用于判断是不是时间列表函数执行的该函数
+*/
+void SetMenuTime(menu_area *target, menu_timems *menutime_obj, uint16_t function, uint16_t ms)
+{
+	if(target == NULL) return; // 检查地址是否有效
+	target->menu_time = menutime_obj;
+	menutime_obj->counttime=0; //默认起始计数值
+	menutime_obj->timems = ms; //想要执行时间间隔
+	target->specialfeatures |= function; //特殊功能注册
+}
+
+/*
+	功能：将菜单添加入时间列表，在该界面下，每ms执行指定菜单
+	target：指定菜单
+	ms：间隔时间
 */
 static void AddToMenuTimeList(menu_area *target, uint16_t ms)
 {
@@ -492,7 +569,7 @@ static void AddToMenuTimeList(menu_area *target, uint16_t ms)
 	target->menu_time = (menu_timems *) MenuMalloc(sizeof(menu_timems));
 	if(!(target->menu_time)) return;
 	target->menu_time->counttime=0; //默认起始计数值
-	target->menu_time->timems = ms; // 想要执行时间间隔
+	target->menu_time->timems = ms; //想要执行时间间隔
 }
 
 
@@ -507,15 +584,14 @@ static void AddToMenuTimeList(menu_area *target, uint16_t ms)
 /*
 	功能：特殊功能注册
 	target：要注册的菜单
-	function：特殊功能表里的指针，可或
+	function：特殊功能表里的宏，可或
 	ms；延时时间，含MenuTime时，ms为延时，不含时，ms不被使用，一般填NULL
 */
 void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms)
 {
-	
 	if(target == NULL) return;
 	
-	if(function & MenuTime) { 
+	if(function & MenuTime) {
 		AddToMenuTimeList(target, ms);//时间队列
 	}
 	target->specialfeatures |= function; //特殊功能注册
@@ -632,17 +708,17 @@ void ScrollingDisplay_Y(menu_area *target, int16_t showSY, uint8_t showEY, int16
 	
 	if( !(p->specialfeatures & MenuScrolling) ) {
 		p->specialfeatures |= MenuScrolling;
-		ChangeMenuY(TargetMenu, showSY, showEY, 0);
+		ChangeMenuY(target, showSY, showEY, 0);
 	}
 	
 	if(showSY > TarSY) showSY = TarSY;
 	if(TarEY > showEY) TarEY = showEY;
 	
-	if(TargetMenu->y < TarSY) {
-		ChangeMenuY(TargetMenu, showSY, showEY, TarSY-TargetMenu->y);
+	if(target->y < TarSY) {
+		ChangeMenuY(target, showSY, showEY, TarSY-target->y);
 	}
-	else if(TargetMenu->y+TargetMenu->high >= TarEY) {
-		ChangeMenuY(TargetMenu, showSY, showEY, TarEY-TargetMenu->y - TargetMenu->high);
+	else if(target->y+target->high >= TarEY) {
+		ChangeMenuY(target, showSY, showEY, TarEY-target->y - target->high);
 	}
 }
 
@@ -707,7 +783,8 @@ static void DrawMenuRectangle(menu_area *target)
 
 menu_area * TargetMenu = NULL; // 实时目标菜单
 
-//以下两函数与上完全相同，为防止同时使用该函数，故设置专用函数
+//以下函数与上完全相同，为防止同时使用该函数，故设置专用函数
+
 static menu_area *MenuListShowHeadForHeart(menu_area *target)
 {
 	menu_area *targetmenu = target;
@@ -738,6 +815,35 @@ static menu_area *MenuListShowTailForHeart(menu_area *target)
 	}
 }
 
+
+static menu_area *FindMeunListHeardForHeart(menu_area *target) 
+{
+	menu_area *heard=target;
+	
+	if(target == NULL) return NULL;//检查地址是否有效
+	for( ; ; )
+	{
+		if(heard->id == MENUHEARDID) break; // 菜单列表头id 
+		heard = heard->previous;
+	}
+	return heard;
+}
+
+
+static menu_area *FindMeunListTailForHeart(menu_area *target) 
+{
+	menu_area *tail=target;
+	
+	if(target == NULL) return NULL; //检查地址是否有效
+	
+	for( ; ; )
+	{
+		if(tail->next == NULL) break; //检查下一个是否存在
+		if(tail->next->id == MENUHEARDID) break; // 循环中，下一个是否为头
+		tail = tail->next;
+	}
+	return tail;
+}
 /*
 	功能：菜单心跳执行，每1ms执行该函数
 */
@@ -747,44 +853,69 @@ static menu_area *MenuListShowTailForHeart(menu_area *target)
 	注意：请在菜单初始化的结尾置一该标志，防止中断与main同时调用相关函数
 */
 bool MenuHeartTimeStart = DISABLE; //时间列表开始标志
-static bool RefreshFlagForHeart = 0; //时间列表刷新标志
+static bool RefreshFlagForHeart = DISABLE; //时间列表刷新标志
 
 void MenuHeartTime(void)
 {
 	menu_area *p = TargetMenu; //菜单
-	menu_area *MenuShowTail = NULL; //显示菜单尾
+	menu_area *MenuTail = NULL; //菜单尾
+	menu_area *MenuShowHeard = NULL;
+	menu_area *MenuShowTail = NULL;
 	
-	bool refreshflag = 0; //屏幕刷新标志，0不刷新，1刷新
-	
+	uint8_t flag = 0;
+		
 	if(MenuHeartTimeStart==DISABLE) return; //是否开始
 	
 	if(p==NULL) return; //检查地址是否有效
 	
-	RefreshFlagForHeart=1; //屏幕刷新
-	
-	p = MenuListShowHeadForHeart(p);// 找到开始显示的头
+	MenuShowHeard = MenuListShowHeadForHeart(p);// 找到开始显示的头
 	MenuShowTail = MenuListShowTailForHeart(p);//显示菜单尾
+	p = FindMeunListHeardForHeart(p);// 找到列表头
+	MenuTail = FindMeunListTailForHeart(p);//找到列表尾
 	
 	for( ; ; )
 	{
-		if(p->menu_time != NULL){ //是否创建
-			p->menu_time->counttime++; //计时
-			if( (p->menu_time->counttime) == p->menu_time->timems){ //到达计时点
-				p->menu_time->counttime=0; //计时复位
-				p->specfeattrigflag |= MenuTime; //赋值状态
-				if( (p->specialfeatures)& MenuTimeForce ){ //是否强制执行
-					if(p->menuinterface){ //指向地址存在
-						p->menuinterface(p); //执行指向函数
+		if(p->menu_time != NULL){ //是否创建	
+			if(p == MenuShowHeard) flag = 1;
+			if(flag) {
+				if( (p->specialfeatures)& MenuTimeForce ){
+					p->menu_time->counttime++; //计时
+					if( (p->menu_time->counttime) == p->menu_time->timems){ //到达计时点
+						p->menu_time->counttime=0; //计时复位
+						p->specfeattrigflag |= MenuTime; //赋值状态
+						if(p->menuinterface){
+							p->menuinterface(p); //执行指向函数
+						}
+						RefreshFlagForHeart = ENABLE;
 					}
 				}
-				refreshflag = 1;
+				else {
+					p->menu_time->counttime++; //计时
+					if( (p->menu_time->counttime) == p->menu_time->timems){ //到达计时点
+						p->menu_time->counttime=0; //计时复位
+						p->specfeattrigflag |= MenuTime; //赋值状态
+						RefreshFlagForHeart = ENABLE;
+					}
+				}
 			}
+			else {
+				if( (p->specialfeatures) & MenuTimeForce ){
+					p->menu_time->counttime++; //计时
+					if( (p->menu_time->counttime) == p->menu_time->timems){ //到达计时点
+						p->menu_time->counttime=0; //计时复位
+						p->specfeattrigflag |= MenuTime; //赋值状态
+						if(p->menuinterface){
+							p->menuinterface(p); //执行指向函数
+						}
+						RefreshFlagForHeart = ENABLE;
+					}
+				}
+			}
+			if(p == MenuShowTail) flag = 0;
 		}
-		if(p==MenuShowTail) break;
+		if(p==MenuTail) break;
 		p=p->next;
 	}
-	
-	if(!refreshflag) RefreshFlagForHeart=0;//屏幕刷新
 }
 
 /*
@@ -977,17 +1108,17 @@ void MenuRun(void)
 {
 	EquipmentState(); //输入设备
 	
-	if(RefreshFlagForHeart){ //时间列表刷新标志
-		RefreshFlagForHeart = 0;
-		ScreenPara.refresh = 1;
+	if(RefreshFlagForHeart == ENABLE){ //时间列表刷新标志
+		RefreshFlagForHeart = DISABLE;
+		ScreenPara.refresh = ENABLE;
 	}
 	
-	if(ScreenPara.refresh && TargetMenu)
+	if( (ScreenPara.refresh==ENABLE) && TargetMenu)
 	{
 		StateToPointer(); // 设备输入状态改变实时目标菜单指针
 		
-		MenuListOverallRun(TargetMenu); //菜单全局
 		SpecialFunctionRun(TargetMenu); //特殊功能运行
+		MenuListOverallRun(TargetMenu); //菜单全局
 		MenuListInterface(); //依次显示当前菜单列表
 		MenuCheckedStyle(TargetMenu);//菜单选中风格
 		
@@ -995,7 +1126,7 @@ void MenuRun(void)
 		
 		ClearnBuff(); // 清空缓存
 		StatusInformation = Menu_noaction; //输入设备状态复位
-		ScreenPara.refresh=0;// 刷新标志复位
+		ScreenPara.refresh=DISABLE;// 刷新标志复位
 	}
 }
 

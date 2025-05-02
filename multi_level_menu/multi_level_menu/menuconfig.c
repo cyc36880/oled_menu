@@ -4,28 +4,15 @@
 #include "menufontshow.h" //字符函数
 #include "Graphicalfunctions.h" // 图形化函数
 
+uint16_t id = MENUHEARDID;
 
 void test1_1(menu_area *target);
-
-void alwayst(void);
-void alwayst1(void);
+void test1_2(menu_area *target);
+void always(void);
 
 menu_area menutest0;
-
-menu_area menutest1;
-menu_area menutest2;
-menu_area menutest3;
-menu_area menutest4;
-menu_area menutest5;
-menu_area menutest6;
-
-
-menu_area menutest7;
-menu_area menutest8;
-menu_area menutest9;
-menu_area menutest10;
-menu_area menutest11;
-menu_area menutest12;
+#define arraynum  20 //批量菜单个数
+menu_area menuarray[arraynum];//批量菜单数组
 
 
 /*
@@ -33,29 +20,18 @@ menu_area menutest12;
 */
 static void MakeMenu(void)
 {
-	TargetMenu = SetMenu(&menutest0, MenuScreenCenterX(32), 0, 32, 16, 1, NULL); //使用以创建好的菜单配置
-	menutest0.menuinterface = test1_1;
+	TargetMenu = &menutest0;
+	SetMenu(&menutest0, MenuScreenCenterX(32), 0, 32, 16, 1, NULL)->menuinterface = test1_1; //使用以创建好的菜单配置
 	
-	SetMenu(&menutest1, MenuScreenCenterX(32), 0, 32, 16, 1, NULL)->menuinterface = test1_1;
-	LinkToParentClass(&menutest0, &menutest1);
+	SetMenu(&menuarray[0], MenuScreenCenterX(32), 0, 32, 16, 1, NULL);
+	BatchFastSimilarMenu(&menuarray[0], &menuarray[0], arraynum, 2, test1_1); //批量菜单初始化
+	LinkToParentClass(&menutest0, &menuarray[0]);
 	
-	FastSimilarMenu(&menutest1, &menutest2, 2)->menuinterface = test1_1;
-	FastSimilarMenu(&menutest1, &menutest3, 2)->menuinterface = test1_1;
-		SetMenu(&menutest7, MenuScreenCenterX(32), 0, 32, 16, 1, NULL)->menuinterface = test1_1;
-		LinkToParentClass(&menutest3, &menutest7);
-		FastSimilarMenu(&menutest7, &menutest8, 2)->menuinterface = test1_1;
-		FastSimilarMenu(&menutest7, &menutest9, 2)->menuinterface = test1_1;
-		FastSimilarMenu(&menutest7, &menutest10, 2)->menuinterface = test1_1;
-		FastSimilarMenu(&menutest7, &menutest11, 2)->menuinterface = test1_1;
-		FastSimilarMenu(&menutest7, &menutest12, 2)->menuinterface = test1_1;
-		MenuOverall(&menutest7)->menuinterface = alwayst1;
-	FastSimilarMenu(&menutest1, &menutest4, 2)->menuinterface = test1_1;
-	FastSimilarMenu(&menutest1, &menutest5, 2)->menuinterface = test1_1;
-	FastSimilarMenu(&menutest1, &menutest6, 2)->menuinterface = test1_1;
+	menuarray[arraynum-1].menuinterface = test1_2; //末尾特殊处理
+	menuarray[arraynum-1].checked = DISABLE;
+	AddToSpecialFunction(&menuarray[arraynum-1], EnterMenu, 0); //添加特殊功能
 	
-	MenuOverall(&menutest1)->menuinterface = alwayst;
-	MakeMenuListRing(&menutest1);
-	
+	MenuOverall(&menuarray[0])->menuinterface = always;
 	
 	
 	
@@ -71,12 +47,18 @@ void test1_1(menu_area *target)
 	MenuShowNum(target, 0, 0, 2, target->id);
 }
 
-void alwayst(void)
+void test1_2(menu_area *target)
 {
-	ScrollingDisplay_Y(TargetMenu, 0, 48, 0, 48);
+	if(TriggerCheck(target, EnterMenu)) {
+		TargetMenu = FindMenuOfID(TargetMenu, id, 0);
+		return;
+	}
 }
-void alwayst1(void)
+
+
+void always(void)
 {
+	id = TargetMenu->id;
 	ScrollingDisplay_Y(TargetMenu, 0, 64, 16, 32);
 }
 

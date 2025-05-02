@@ -1,13 +1,7 @@
 #ifndef _oled_h
 #define _oled_h
 
-#include "menuconfig.h"
-
-#define  u8 unsigned char 
-#define	 u16 unsigned short int
-#define  u32 unsigned int 
-#define OLED_CMD  0	//写命令
-#define OLED_DATA 1	//写数据
+#include "menu.h"
 
 //sbit OLED_CS=P1^4; //片选
 //sbit OLED_RST =P1^2;//复位
@@ -25,8 +19,10 @@
 #define OLED_DC_Clr() HAL_GPIO_WritePin(OLED_DC_GPIO_Port, OLED_DC_Pin, GPIO_PIN_RESET)
 #define OLED_DC_Set() HAL_GPIO_WritePin(OLED_DC_GPIO_Port, OLED_DC_Pin, GPIO_PIN_SET)
 
-   		  					   
-void OLED_Init(void);          //初始化
+
+
+//初始化   		  					   
+void OLED_Init(void); 
 //刷新整个屏幕
 void disp_flush(void);
 

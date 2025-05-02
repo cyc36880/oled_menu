@@ -1,13 +1,22 @@
 #include "oled.h"
-#include "menu.h"
+
+
+#define  u8 unsigned char 
+#define	 u16 unsigned short int
+#define  u32 unsigned int 
+	
+#define OLED_CMD  0	//写命令
+#define OLED_DATA 1	//写数据
+
+
 
 /*............延时..............*/
-void delay_ms(unsigned int ms)
+static void delay_ms(unsigned int ms)
 {                         
 	HAL_Delay(ms);
 }
 /*.........命令与数据..........*/
-void OLED_WR_Byte(u8 dat,u8 cmd)    
+static void OLED_WR_Byte(u8 dat,u8 cmd)    
 {	
 	if(cmd)
 	  OLED_DC_Set();
@@ -20,13 +29,13 @@ void OLED_WR_Byte(u8 dat,u8 cmd)
 	OLED_CS_Set();
 	OLED_DC_Set();   	  
 } 
-void OLED_Set_Pos(unsigned char x, unsigned char y)    //坐标位置
+static void OLED_Set_Pos(unsigned char x, unsigned char y)    //坐标位置
 { 
 	OLED_WR_Byte(0xb0+y,OLED_CMD);
 	OLED_WR_Byte(((x&0xf0)>>4)|0x10,OLED_CMD);
 	OLED_WR_Byte((x&0x0f)|0x01,OLED_CMD); 
 } 
-void OLED_Clear()             //清屏
+static void OLED_Clear()             //清屏
 {  
 	u8 i,n;		    
 	for(i=0;i<8;i++)  
@@ -55,7 +64,6 @@ void disp_flush(void)
 			else if(SCREENSHOWMANNER == ScreenRollback) { //反转显示
 				OLED_WR_Byte(~DisplayBuff[i*SCREENWIDTH + j], OLED_DATA);
 			}
-			
 		}
 	}
 }

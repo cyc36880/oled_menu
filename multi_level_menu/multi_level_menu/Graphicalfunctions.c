@@ -300,7 +300,7 @@ void PolygonTransformation(int16_t x0,int16_t y0,uint16_t r, uint16_t n)
 	direct  ：正反转 1顺时针 0逆时针 
 	返回值  ：unsigned int 指针 
 */
-void RotateXY(int *xy, int centerX, int centerY,int x, int y,int Angle,int direct) 
+void RotateXY(int *xy, int centerX, int centerY,int x, int y,int Angle, char direct) 
 {
 	double angle = RADIAN(Angle);
 	int temp=(y-centerY)*(y-centerY)+(x-centerX)*(x-centerX);
@@ -467,13 +467,22 @@ int16_t *LineChart(TypLineChartMap *t, int16_t x, int16_t y)
 
 	注意：取模格式> 阴码 列行式 逆向
 */
-void PictureShow(menu_area *target, const uint8_t *Size, const uint8_t *p, int16_t x, int16_t y)
+void PictureShow(menu_area *target, const uint8_t *psize, const uint8_t *p, int16_t x, int16_t y)
 {
 	uint8_t h,w;
 	bool w_b=0;
-	uint8_t wight = Size[0];
-	uint8_t high  = Size[1];
+	uint8_t wight;
+	uint8_t high;
 	
+	if(psize == NULL) {
+		wight = p[0];
+		high  = p[1];
+		p += 2;
+	}
+	else {
+		wight = psize[0];
+		high  = psize[1];
+	}
 	for(h=0; h<high; h++)//字高
 	{
 		for(w=0; w<wight; w++) //字宽

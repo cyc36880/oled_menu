@@ -5,12 +5,9 @@
 /************ 英 文 编 码 ***************/
 /****************************************/
 
-//下面字符编码的尺寸信息 宽x高
-extern const unsigned char F8X16_SizeInf[2];
 //阴码 列行式 逆向
 extern const unsigned char F8X16[];
 
-extern const unsigned char F6X8_SizeInf[2];
 extern const unsigned char F6X8[];
 
 
@@ -23,9 +20,6 @@ extern const unsigned char HZK16x16index[];
 //汉字库 阴码 列行式 逆向 16x16
 extern const unsigned char HZK16x16[][16];
 
-
-
-extern const unsigned char picturesize[];
 extern const unsigned char picture0[];
 
 #endif

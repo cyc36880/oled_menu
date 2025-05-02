@@ -3,14 +3,14 @@
 #include "oledfont.h"
 
 
-static const uint8_t *font = F8X16;
-const uint8_t *font_SizeInf = F8X16_SizeInf;
+static const uint8_t *font = F8X16+2;
+const uint8_t *font_SizeInf = F8X16;
 
 //设置英文显示字体
-void SetFont(const uint8_t *xfont,const uint8_t *xfont_SizeInf)
+void SetFont(const uint8_t *xfont)
 {
-	font = xfont;
-	font_SizeInf = xfont_SizeInf;
+	font = xfont+2;
+	font_SizeInf = xfont;
 }
 
 /*
@@ -153,7 +153,6 @@ void CharacterText(menu_area *target, int16_t x, int16_t y, uint16_t ascw, const
 			showy++;
 			continue;
 		}
-		
 		MenuShowAscStr(target,  x + showx*font_SizeInf[0],  y + showy*font_SizeInf[1], showbuf);
 		
 		if(++showx >= ascw) {
@@ -179,107 +178,161 @@ static unsigned int mystrlen(const uint8_t *str)
 	return i;
 }
 
-/*
-	功能：测量以\0为结尾的 汉字与字符 的字符串长度
-*/
-static unsigned int HZStrLen(uint8_t *str) 
-{
-	unsigned int StrLen = mystrlen(str);
-	unsigned int i=0;
-	unsigned int strnum=0;
-	for(i=0; i<StrLen;)
-	{
-		if((unsigned char)str[i]>127) 
-			i+=2;
-		else
-			i++;
-		strnum++;
-	}
-	return strnum;
-}
+///*
+//	功能：测量以\0为结尾的 汉字与字符 的字符串长度
+//*/
+//static unsigned int HZStrLen(uint8_t *str) 
+//{
+//	unsigned int StrLen = mystrlen(str);
+//	unsigned int i=0;
+//	unsigned int strnum=0;
+//	for(i=0; i<StrLen;)
+//	{
+//		if((unsigned char)str[i]>127) 
+//			i+=2;
+//		else
+//			i++;
+//		strnum++;
+//	}
+//	return strnum;
+//}
+
+///*
+//	功能：从已知字符串中找想要的字符的位置
+//	formfind：目标字符串
+//	find：想要寻找的字符所在的字符串
+//	num：find中第num的字符
+//	返回值：寻找字符在formfind中的位置
+//*/
+//static unsigned char StrIfHaveStr(const uint8_t *formfind, uint8_t *find, unsigned int num)
+//{
+//	unsigned int findLen = mystrlen(find);
+//	unsigned int formfindlen = mystrlen(formfind);
+//	unsigned int i=0, j=0;
+//	unsigned int strnum=0, HZflag=0;
+//	
+//	if(num >= findLen) return 0;
+//	if(formfindlen==0 || findLen==0) return 0;
+//	for(strnum=0, i=0; strnum<num+1; )
+//	{
+//		if((unsigned char)find[i]>127){
+//			i+=2;
+//			if(strnum==num) HZflag=1;
+//		}
+//		else{
+//			i++;	
+//		}
+//		strnum++;
+//	}
+//	for(strnum=0, j=0; strnum<formfindlen; )
+//	{
+//		strnum++;
+//		if(HZflag)
+//		{
+//			if(formfind[j]==find[i-2] && formfind[j+1]==find[i-1]) 
+//				return strnum;
+//		}
+//		else
+//		{
+//			if(formfind[j]==find[i-1])
+//				return strnum;	
+//		}
+//		if((unsigned char)formfind[j]>127){
+//			j+=2;
+//		}
+//		else{
+//			j++;	
+//		}	
+//	}
+//	return 0;
+//}
+//// 汉字显示，target为NULL在屏幕写
+//static void MenuHZ16x16Str(menu_area *target, int16_t x, int16_t y, uint8_t *s_dat)
+//{
+//	unsigned char i0=0, s_datlen = HZStrLen(s_dat);
+//	unsigned char j0=0;
+//	
+//	uint8_t i,j;
+//	
+//	for(i0=0; i0<s_datlen; i0++)
+//	{
+//		j0=StrIfHaveStr(HZK16x16index, s_dat, i0);
+//		if(j0 == 0) {
+//			continue; // 没有找到
+//		}
+
+//		for(j=0; j<16; j++) //高度
+//		{
+//			for(i=0; i<16; i++) //宽度
+//			{
+//				if((HZK16x16[(j0-1)*2 + j/8][i]) & (0x01<<(j%8))){
+//					if(target == NULL) write_point(x+i, y+j, 1);
+//					else               MenuSetPoint(target,x+i, y+j, 1);
+//				}
+//				else {
+//					if(GRAPHICSSHOWMANNER == GraphicsCover) {
+//						if(target == NULL) write_point(x+i, y+j, 0);
+//						else               MenuSetPoint(target,x+i, y+j, 0);
+//					}
+//				}
+//			}
+//		}
+//	}
+//}
 
 /*
-	功能：从已知字符串中找想要的字符的位置
-	formfind：目标字符串
-	find：想要寻找的字符所在的字符串
-	num：find中第num的字符
-	返回值：寻找字符在formfind中的位置
+	功能：单个汉字在字符串中滤去ascii的位置
 */
-static unsigned char StrIfHaveStr(const uint8_t *formfind, uint8_t *find, unsigned int num)
+static unsigned int HzInStr(const uint8_t *formfind, const uint8_t *find) 
 {
-	unsigned int findLen = mystrlen(find);
-	unsigned int formfindlen = mystrlen(formfind);
-	unsigned int i=0, j=0;
-	unsigned int strnum=0, HZflag=0;
+	unsigned int fontnum =  mystrlen(formfind);
+	unsigned int i=0;
+	unsigned int fontn = 0;
 	
-	if(num >= findLen) return 0;
-	if(formfindlen==0 || findLen==0) return 0;
-	for(strnum=0, i=0; strnum<num+1; )
-	{
-		if((unsigned char)find[i]>127){
-			i+=2;
-			if(strnum==num) HZflag=1;
-		}
-		else{
-			i++;	
-		}
-		strnum++;
+	if(fontnum<2 || mystrlen(find)!=2 || find[0]<=127) {
+		return 0;
 	}
-	for(strnum=0, j=0; strnum<formfindlen; )
+	
+	for(i=0; i<fontnum-1; i++)
 	{
-		strnum++;
-		if(HZflag)
-		{
-			if(formfind[j]==find[i-2] && formfind[j+1]==find[i-1]) 
-				return strnum;
+		if(formfind[i] > 127) {
+			fontn++;
+			if(formfind[++i]==find[1] && formfind[i-1]==find[0]) {
+				return fontn;
+			}
 		}
-		else
-		{
-			if(formfind[j]==find[i-1])
-				return strnum;	
-		}
-		if((unsigned char)formfind[j]>127){
-			j+=2;
-		}
-		else{
-			j++;	
-		}	
 	}
 	return 0;
 }
-// 汉字显示，target为NULL在屏幕写
-static void MenuHZ16x16Str(menu_area *target, int16_t x, int16_t y, uint8_t *s_dat)
+// 单个汉字显示，target为NULL在屏幕写
+static void MenuHZ16x16(menu_area *target, int16_t x, int16_t y, uint8_t *s_dat)
 {
-	unsigned char i0=0, s_datlen = HZStrLen(s_dat);
-	unsigned char j0=0;
+	unsigned int j0=0;
+	unsigned char i,j;
 	
-	uint8_t i,j;
+	j0=HzInStr(HZK16x16index, s_dat);
+	if(j0 == 0) {
+		return; // 没有找到
+	}
 	
-	for(i0=0; i0<s_datlen; i0++)
+	for(j=0; j<16; j++) //高度
 	{
-		j0=StrIfHaveStr(HZK16x16index, s_dat, i0);
-		if(j0 == 0) {
-			continue; // 没有找到
-		}
-
-		for(j=0; j<16; j++) //高度
+		for(i=0; i<16; i++) //宽度
 		{
-			for(i=0; i<16; i++) //宽度
-			{
-				if((HZK16x16[(j0-1)*2 + j/8][i]) & (0x01<<(j%8))){
-					if(target == NULL) write_point(x+i, y+j, 1);
-					else               MenuSetPoint(target,x+i, y+j, 1);
-				}
-				else {
-					if(GRAPHICSSHOWMANNER == GraphicsCover) {
-						if(target == NULL) write_point(x+i, y+j, 0);
-						else               MenuSetPoint(target,x+i, y+j, 0);
-					}
+			if((HZK16x16[(j0-1)*2 + j/8][i]) & (0x01<<(j%8))){
+				if(target == NULL) write_point(x+i, y+j, 1);
+				else               MenuSetPoint(target,x+i, y+j, 1);
+			}
+			else {
+				if(GRAPHICSSHOWMANNER == GraphicsCover) {
+					if(target == NULL) write_point(x+i, y+j, 0);
+					else               MenuSetPoint(target,x+i, y+j, 0);
 				}
 			}
 		}
 	}
 }
+
 // 汉字 Asc 混合显示，target为NULL在屏幕写
 void MenuHzAndAsc(menu_area *target, int16_t x, int16_t y, const uint8_t *s_dat)
 {
@@ -294,7 +347,7 @@ void MenuHzAndAsc(menu_area *target, int16_t x, int16_t y, const uint8_t *s_dat)
 		{
 			HZShowBuf[0]=s_dat[i];
 			HZShowBuf[1]=s_dat[i+1];
-			MenuHZ16x16Str(target, x, y + offset, HZShowBuf);
+			MenuHZ16x16(target, x, y + offset, HZShowBuf);
 			x+=16; // 坐标右移 由汉字宽度决定
 			i+=2;  // 字符串位置标志右移，汉字固定为2
 		}
@@ -353,7 +406,7 @@ void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint16_t ascw, cons
 		}
 		
 		if(showbuf[0] > 0x7f) { //中文显示
-			MenuHZ16x16Str(target,  x + showx,  y + showy*offset, showbuf);
+			MenuHZ16x16(target,  x + showx,  y + showy*offset, showbuf);
 			showbuf[1] = 0;
 			showx += 16;
 		}
@@ -458,7 +511,6 @@ static void SerialstartN(uint8_t n)
 			if(SerialstartShow >= MenuSerialBufSzie) {
 				SerialstartShow = 0;
 			}
-
 		}
 	}
 }
@@ -511,9 +563,7 @@ void MenuPaddingSerialBuf(uint8_t dat)
 		}
 		MenuSerialShowPPos[0] = 0;
 	}
-	
 	MenuSerialShowPPos[0]++;
-
 }
 
 

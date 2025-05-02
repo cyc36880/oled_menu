@@ -5,6 +5,7 @@ multi_level_menu\menufontshow.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 multi_level_menu\menufontshow.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
 multi_level_menu\menufontshow.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
 multi_level_menu\menufontshow.o: ..\multi_level_menu\oled.h
+multi_level_menu\menufontshow.o: ..\multi_level_menu\menu.h
 multi_level_menu\menufontshow.o: ..\multi_level_menu\menuconfig.h
 multi_level_menu\menufontshow.o: ../Core/Inc/main.h
 multi_level_menu\menufontshow.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h
@@ -42,6 +43,5 @@ multi_level_menu\menufontshow.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_h
 multi_level_menu\menufontshow.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 multi_level_menu\menufontshow.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
 multi_level_menu\menufontshow.o: ../Core/Inc/spi.h
-multi_level_menu\menufontshow.o: ..\multi_level_menu\menu.h
 multi_level_menu\menufontshow.o: ..\multi_level_menu\Graphicalfunctions.h
 multi_level_menu\menufontshow.o: ..\multi_level_menu\oledfont.h

@@ -4,12 +4,10 @@
 #include "menu.h"
 #include "menuconfig.h"
 
-
 extern const uint8_t *font_SizeInf; //字体大小
 
-
 // 设置英文显示字体
-void SetFont(const uint8_t *xfont,const uint8_t *xfont_SizeInf);
+void SetFont(const uint8_t *xfont);
 
  
 // 功能：在菜单中写Asc字符，target为NULL在屏幕写
@@ -22,7 +20,7 @@ void MenuShowAscStr(menu_area *target, int16_t x, int16_t y, const uint8_t *str)
 void MenuHzAndAsc(menu_area *target, int16_t x, int16_t y, const uint8_t *s_dat);
 
 
-// 文本显示 <仅支持英文> 《字符个数！！》
+// 文本显示 <仅支持英文>   <ascw 字符个数！！>
 void CharacterText(menu_area *target, int16_t x, int16_t y, uint16_t ascw, const uint8_t *str);
 // 文本显示 <中英文混合显示> 行间隔以最大的字体高度执行！！
 void CharacterTextC(menu_area *target, int16_t x, int16_t y, uint16_t ascw, const uint8_t *str);

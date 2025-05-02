@@ -25,7 +25,7 @@ void DrawfillRoundRect(int x, int y, unsigned char w, unsigned char h, unsigned 
 void PolygonTransformation(int16_t x0,int16_t y0,uint16_t r, uint16_t n);
 
 //旋转目标点
-void RotateXY(int *xy, int centerX, int centerY,int x, int y,int Angle,int direct);
+void RotateXY(int *xy, int centerX, int centerY, int x, int y, int Angle, char direct);
 
 
 
@@ -63,9 +63,13 @@ int16_t *LineChart(TypLineChartMap *t, int16_t x, int16_t y);
 
 // ---------------- 图 片 -------------------
 
-//图片显示
-//取模格式：阴码 列行式 逆向
-void PictureShow(menu_area *target, const uint8_t *Size, const uint8_t *p, int16_t x, int16_t y);
+/*
+	功能：图片显示
+	取模格式：阴码 列行式 逆向
+
+	注意：若psize为NULL，图片大小应定义在p中，否则大小将按psize设置（真实大小，该函数不会缩放图片）
+*/
+void PictureShow(menu_area *target, const uint8_t *psize, const uint8_t *p, int16_t x, int16_t y);
 
 
 #endif

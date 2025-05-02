@@ -15,7 +15,7 @@
 		
 	每个函数详细的注意事项以及返回值和功能等，请跳转该函数上部查看
 	
-	该菜单使用malloc申请空间，无free，注意内存溢出。请确保heap(堆)大小足够
+	该菜单部分使用malloc申请空间，无free，注意内存溢出。请确保heap(堆)大小足够
 */
 
 // ================================ 菜 单 ==============================
@@ -23,7 +23,7 @@
 #define MENUHEARDID 1 //菜单列表起始ID
 
 #define ENABLE   1 //使能
-#define DISENBLE 0 //失能
+#define DISABLE 0 //失能
 
 // 菜单操作
 enum MenuState
@@ -47,11 +47,15 @@ enum SpecialInformation
 	
 	/*****上述功能的改进*****/
 	
-	MenuTimeForce = 0x20, //时间列表强制执行。 与MenuTime配合使用，否则无效，无需对此判断，if末尾加return
+	MenuTimeForce = 0x20, //！！！时间列表强制执行。 与MenuTime配合使用，否则无效，无需对此判断，if末尾必须加return！！！
+	/*
+		注册时，不加该标志，则仅当菜单显示时才能正常计数。
+		加入该标志，由中断调取相应函数，并且只要处于该菜单所处的列表中，就能正常计数，并调用相应函数
+	*/
 	
 	/******** 其 它 **********/
 	MenuHaveOverall = 0x40,//不可使用，其它功能占用该位。菜单列表全局
-	MenuScrolling   = 0x80,//不可使用，其它功能占用该位。菜单列表全局
+	MenuScrolling   = 0x80,//不可使用，其它功能占用该位。菜单列表滚动
 };
 
 
@@ -60,8 +64,8 @@ enum SpecialInformation
 //菜单时间队列
 typedef struct MENU_TIMEMS
 {
-	uint16_t counttime;
-	uint16_t timems;
+	uint16_t counttime; //起始计数值
+	uint16_t timems;    //预设时间
 }menu_timems;
 
 //菜单参数
@@ -80,8 +84,8 @@ typedef struct MENU_AREA
 	struct MENU_AREA *father;   //父类
 	void (*menuinterface)(struct MENU_AREA *target); //菜单内容
 	menu_timems *menu_time;
-	uint16_t specialfeatures;//特殊功能注册
-	uint16_t specfeattrigflag; //特殊功能触发标记
+	uint8_t specialfeatures;//特殊功能注册
+	uint8_t specfeattrigflag; //特殊功能触发标记
 }menu_area;
 
 //列表全局队列
@@ -98,11 +102,14 @@ typedef struct MENULISTOVERALL
 menu_area *AddToMenuList(int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer);
 //功能：对已有菜单注册或添加菜单 
 menu_area *SetMenu(menu_area *target, int16_t x, int16_t y, uint16_t width, uint16_t high, bool checked, menu_area *transfer);
-//功能：快速目标菜单下方仿制  	kind：类型 0:有超出部分立即按照头仿造 1:只有完全在屏幕下方才按头仿造 2:仅在最后下方仿造
-menu_area *FastSimilarMenu(menu_area *target, menu_area *source, uint8_t kind);
+//功能：快速目标菜单下方仿制  	mod：类型 0:有超出部分立即按照头仿造 1:只有完全在屏幕下方才按头仿造 2:仅在最后下方仿造
+menu_area *FastSimilarMenu(menu_area *target, menu_area *source, uint8_t mod);
+//功能：批量初始化  source：menu_area类型的数组  n：数组个数  mod：类型  menuinterface：统一链接的函数
+void BatchFastSimilarMenu(menu_area *target, menu_area source[], uint16_t n, uint8_t mod, void (*menuinterface)(struct MENU_AREA *target));
+
 
 //功能：链接到父类
-void LinkToParentClass(menu_area *target, menu_area *source);
+void LinkToParentClass(menu_area *father, menu_area *sub);
 
 
 
@@ -130,6 +137,8 @@ menu_area *MenuListShowHead(menu_area *target);
 //功能：返回当前显示列表的尾，即使它不能被选中
 menu_area *MenuListShowTail(menu_area *target);
 
+//功能：找到为ID的菜单  mod：0：无则返回原指针，1：无则返回NULL
+menu_area *FindMenuOfID(menu_area *target, uint16_t id, bool mod);
 
 
 
@@ -138,6 +147,9 @@ void MakeMenuListRing(menu_area *target);
 
 //功能：菜单列表始终执行函数
 MenuListOverall *MenuOverall(menu_area *target);
+
+//功能：对已有的时间添加至菜单 <仅针对时间的特殊功能注册>
+void SetMenuTime(menu_area *target, menu_timems *menutime_obj, uint16_t function, uint16_t ms);
 
 //功能：特殊功能注册
 void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms);
@@ -170,7 +182,7 @@ extern enum MenuState StatusInformationAlways; // 输入设备状态 <不会改变>
 extern uint8_t InuptEnable; //输入使用
 
 
-extern uint32_t MenuSize;//菜单申请的空间大小
+extern uint32_t MenuMallocSize;//菜单申请的空间大小
 
 /*
 * 输入要显示占用的高度（high）或宽度（width），输出左上角的x或y相对于
@@ -178,6 +190,9 @@ extern uint32_t MenuSize;//菜单申请的空间大小
 */
 #define MenuCenterX(target,w) ((target->width - (w)) / 2)
 #define MenuCenterY(target,h) ((target->high - (h)) / 2)
+
+
+
 
 
 // =========================== 屏 幕 ====================================
@@ -227,6 +242,11 @@ void ClearnBuff(void);
 */
 #define MenuScreenCenterX(width) ((SCREENWIDTH - (width)) / 2)
 #define MenuScreenCenterY(high)  ((SCREENHIGH - (high)) / 2)
+
+
+
+
+
 
 
 // ============================== 其 它 ==================================

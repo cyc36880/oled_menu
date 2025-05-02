@@ -1,5 +1,10 @@
 multi_level_menu\oled.o: ..\multi_level_menu\oled.c
 multi_level_menu\oled.o: ..\multi_level_menu\oled.h
+multi_level_menu\oled.o: ..\multi_level_menu\menu.h
+multi_level_menu\oled.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+multi_level_menu\oled.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+multi_level_menu\oled.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+multi_level_menu\oled.o: ..\multi_level_menu\oled.h
 multi_level_menu\oled.o: ..\multi_level_menu\menuconfig.h
 multi_level_menu\oled.o: ../Core/Inc/main.h
 multi_level_menu\oled.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h
@@ -9,7 +14,6 @@ multi_level_menu\oled.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h
 multi_level_menu\oled.o: ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h
 multi_level_menu\oled.o: ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f407xx.h
 multi_level_menu\oled.o: ../Drivers/CMSIS/Include/core_cm4.h
-multi_level_menu\oled.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 multi_level_menu\oled.o: ../Drivers/CMSIS/Include/cmsis_version.h
 multi_level_menu\oled.o: ../Drivers/CMSIS/Include/cmsis_compiler.h
 multi_level_menu\oled.o: ../Drivers/CMSIS/Include/cmsis_armcc.h
@@ -39,7 +43,3 @@ multi_level_menu\oled.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_e
 multi_level_menu\oled.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
 multi_level_menu\oled.o: ../Core/Inc/spi.h
 multi_level_menu\oled.o: ..\multi_level_menu\menu.h
-multi_level_menu\oled.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
-multi_level_menu\oled.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
-multi_level_menu\oled.o: ..\multi_level_menu\oled.h
-multi_level_menu\oled.o: ..\multi_level_menu\menuconfig.h

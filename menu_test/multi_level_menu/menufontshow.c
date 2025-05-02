@@ -569,20 +569,82 @@ FontInfoType* CharacterTextC(menu_area *target, int16_t x, int16_t y, uint16_t a
 	ret：输出的字符个数
 	注意：内部申请固定内存100字节，不要输出太长字符串
 */
-
-FontInfoType* m_printf(menu_area *target, uint8_t mod, int16_t x, int16_t y, const char *format, ...)
+static uint8_t PRINTF_BUFF[100];
+FontInfoType* m_printf(menu_area *target,int16_t x, int16_t y, const char *format, ...)
 {
-	static uint8_t PRINTF_BUFF[100];
 	va_list args;
-
 	va_start(args, format);
 	vsnprintf((char *)PRINTF_BUFF, sizeof(PRINTF_BUFF), (char *)format, args);
 	va_end(args);
 	
-	if(mod)
+	FontInfoType *FontInfo = StringDeal(PRINTF_BUFF);
+	
+	if(FontInfo->hznum)
 		return CharacterTextC(target, x, y, 0, PRINTF_BUFF);
 	else
 		return CharacterText(target, x, y, 0, PRINTF_BUFF);
+}
+
+
+/*
+	功能：字符串处理
+	
+	str：字符串（ \0 结尾）
+	
+	ret：处理后的信息
+*/
+
+FontInfoType* StringDeal(const uint8_t *str)
+{
+	static FontInfoType fontinfo;	
+	
+	const uint8_t *s = str;
+	
+	uint16_t strlen=0;
+	uint16_t i;
+	uint16_t maxPix=0;
+	
+	
+	ClearnMemory(&fontinfo, sizeof(FontInfoType)); //清空
+	
+	while(*(s++)) //字符串长度
+	{
+		strlen++;
+	}
+	
+	for(i=0; i<strlen; i++)
+	{
+		if(str[i] > 0x7F) //中文
+		{
+			i++;
+			fontinfo.hznum++;
+			maxPix+=16;
+		}
+		else
+		{
+			if(str[i]=='\n')
+			{
+				fontinfo.LBnum++;
+				if(maxPix > fontinfo.maxPix) fontinfo.maxPix = maxPix;
+				maxPix=0;
+			}
+			else
+			{
+				maxPix+=font_SizeInf[0];
+			}
+			fontinfo.ascnum++;
+		}
+	}
+	
+	
+	fontinfo.ascsize[0] = font_SizeInf[0];
+	fontinfo.ascsize[1] = font_SizeInf[1];
+	fontinfo.hzsize[0] = 16;
+	fontinfo.hzsize[1] = 16;
+	if(maxPix > fontinfo.maxPix) fontinfo.maxPix = maxPix;
+	
+	return &fontinfo;
+	
 }
 
 
@@ -591,14 +653,13 @@ FontInfoType* m_printf(menu_area *target, uint8_t mod, int16_t x, int16_t y, con
 
 	FontInfo：字体信息句柄
 	target：指示器句柄
-	mod： 0：使用的函数与中文无关  1：函数关于中文
 	limitSize：尺寸限制，不设置可置NULL。内容为{最窄，最矮， 最宽，最高}，某位不限制可以置0
 
 	ret：发生尺寸修改时，返回1， 无则返回0
 
 */
 
-uint8_t SetIndicatorSize(FontInfoType *FontInfo, menu_area *target, uint8_t mod, uint8_t *limitSize)
+uint8_t SetIndicatorSize(FontInfoType *FontInfo, menu_area *target, const uint8_t *limitSize)
 {
 	uint16_t width;
 	uint16_t high;
@@ -606,7 +667,7 @@ uint8_t SetIndicatorSize(FontInfoType *FontInfo, menu_area *target, uint8_t mod,
 	
 	width = FontInfo->maxPix;
 	
-	switch(mod)
+	switch(FontInfo->hznum)
 	{
 		case 0:
 			high = (FontInfo->LBnum + 1) * FontInfo->ascsize[1];

@@ -54,7 +54,7 @@ extern MessageTypedef *Message_Key; //按键消息广播列表
 
 
 
-
+// --- 《 以下仅供按键消息使用 》-----
 
 //发送缓冲
 //注意：消息缓冲区为空才能写入成功
@@ -70,7 +70,7 @@ void cushMesBro(MessageTypedef *mes);
 
 /*
 	功能：判断缓冲区是否为空
-	ret：1 空，0不为空
+	ret：true 空，false不为空
 */
 uint8_t cushIsNull(void);
 
@@ -159,7 +159,7 @@ uint8_t MenuCoorRecovery(menu_area *target, uint8_t mod, uint8_t style);
 /*
 	功能：列表切换实例（有动画效果）
 				列表的 展开 与 滚动
-	mes：消息句柄, （按键消息）
+	mes：消息句柄 --（按键消息）
 	start：指示器允许起始位置
 	end：  指示器允许结束位置
 	dir：  方向。0 纵向，1横向
@@ -167,11 +167,37 @@ uint8_t MenuCoorRecovery(menu_area *target, uint8_t mod, uint8_t style);
 	注意：当使用“特殊功能”的EnterMenu来堆叠菜单 （MenuCoorAlignment） 时，此函数应比
 			MenuCoorAlignment执行的优先级低，（如可放入在 MenuAlwaysRun_PM）
 */
-void ListSwitchIns(MessageTypedef *mes, bool dir, int16_t start, int16_t end);
+void ListSwitchIns(MessageTypedef *key_mes, bool dir, int16_t start, int16_t end);
 
 
 
+/****************** 串级PID **********************/
 
+typedef struct TANLEPID
+{
+	float P;
+	float I;
+	float D;
+	uint16_t maxval; //绝对值最值
+	float last_diff;
+	float i_val;
+}TanLevPIDTypedef;
+
+/*
+	功能：pid初始化
+	pidhandle：句柄
+	maxval：最终返回值的绝对值最值
+	P、I、D；pid参数
+*/
+TanLevPIDTypedef *TanLevPIDInit(TanLevPIDTypedef *pidhandle, uint16_t maxval, float P, float I, float D);
+
+/*
+	功能：输出pid最终值
+
+	wantval：欲到达值
+	nowval：目前值
+*/
+float TandemLevel_PID(TanLevPIDTypedef *pidhandle, float wantval, float nowval);
 
 
 

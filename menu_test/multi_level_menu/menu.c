@@ -122,7 +122,7 @@ static void EquipmentState(void)
 	}
 	if(KeyState(&StatusInformation)){ //按键扫描
 		if(StatusInformation != Menu_noaction){ //非空闲
-			//MenuRefresh(0); //屏幕刷新
+//			MenuRefresh(0); //屏幕刷新
 		}
 	}
 }
@@ -840,73 +840,27 @@ void MenuSetPoint(menu_area *target, int16_t x, int16_t y, bool w_b)
 */
 static void DrawMenuRectangle(MenuTargetTypedef *MenuPointer)
 {	
-	const uint8_t speed1=12, speed2=5, speed3=3;
-
 	menu_area *target = MenuPointer->TargetMenuP;
+	static TanLevPIDTypedef y_pid = {0.5, 0.3, -0.3, 15}; //d正值抑制，负值不抑制
+	static TanLevPIDTypedef x_pid = {0.5, 0.3, -0.3, 15};
+	static TanLevPIDTypedef w_pid = {0.5, 0.3, -0.3, 15};
+	static TanLevPIDTypedef h_pid = {0.5, 0.3, -0.3, 15};
 	
-	int16_t y=MenuPointer->y, x=MenuPointer->x;
-	int32_t width=MenuPointer->width, high=MenuPointer->high;
+	int16_t y, x;
+	int16_t width, high;
 	uint8_t R = MenuPointer->R;
-
-	const int16_t dif = target->y - y;
-	const int16_t hif = target->x - x;
-	
-	const uint16_t absdif = myabs(dif);
-	const uint16_t abshif = myabs(hif);
 	
 	
 	if(target->width==0 || target->high==0) return;
 	
-	if(MenuPointer->style == ENABLE) { //使能动效
-
-			if(y != target->y) {
-				if(absdif > speed1) {
-					y += dif>0?speed1:-speed1;
-				}
-				else if(absdif > speed2) {
-					y += dif>0?speed2:-speed2;
-				}
-				else if(absdif > speed3) {
-					y += dif>0?speed3:-speed3;
-				}
-				else if(absdif >= 1) {
-					y += dif>0?1:-1;
-				}
-		 }
-
-		if(x != target->x) {
-			if(abshif > speed1) {
-				x += hif>0?speed1:-speed1;
-			}
-			else if(abshif > speed2) {
-				x += hif>0?speed2:-speed2;
-			}
-			else if(abshif > speed3) {
-				x += hif>0?speed3:-speed3;
-			}
-			else if(abshif >= 1) {
-				x += hif>0?1:-1;
-			}
-		}
-
-		if(width != target->width) {
-			if( myabs(target->width - width) > 6) 
-				width += target->width - width > 0 ? 6:-6;
-			else if( myabs(target->width - width) > 3) 
-				width += target->width - width > 0 ? 3:-3;
-			else
-				width += target->width - width > 0 ? 1:-1;
-		}
-
-		if(high != target->high) {
-			if( myabs(target->high - high )> 6) 
-				high += target->high - high > 0 ? 6:-6;
-			else if( myabs(target->high - high )> 3) 
-				high += target->high - high > 0 ? 3:-3;
-			else
-				high += target->high - high > 0 ? 1:-1;
-		}
-
+	if(MenuPointer->style == ENABLE) //使能动效
+	{ 
+		y = TandemLevel_PID(&y_pid, target->y, MenuPointer->y);
+		x = TandemLevel_PID(&x_pid, target->x, MenuPointer->x);
+		width = TandemLevel_PID(&w_pid, target->width, MenuPointer->width);
+		high = TandemLevel_PID(&h_pid, target->high, MenuPointer->high);
+		if(high < R*2) high = R*2;  //防止过小出现错误
+		if(width < R*2) width = R*2;
 		DrawfillRoundRect(x, y, width, high, R);
 	}
 	else {
@@ -929,10 +883,10 @@ MenuTargetTypedef TargetMenuPointrt=// 实时目标菜单
 {
 	.TargetMenuP=NULL, 
 	.LastTargetMenuP=NULL, 
-	.x=-4, 
-	.y=-4, 
-	.width=4, 
-	.high=4, 
+	.x=60, 
+	.y=30, 
+	.width=SCREENWIDTH/2, 
+	.high=SCREENHIGH/2, 
 	.R=3
 };
 
@@ -1362,7 +1316,7 @@ void MenuRun(void)
 		disp_flush();// 刷新屏幕
 		
 		StatusInformation = Menu_noaction; //输入设备状态复位
-		if(ScreenPara.refresh != 0) ScreenPara.refresh--;// 刷新标志复位
+	  ScreenPara.refresh--;// 刷新标志复位
 	}
 	AlwaysRun();
 }

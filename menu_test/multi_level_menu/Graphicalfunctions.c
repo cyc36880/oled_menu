@@ -743,6 +743,8 @@ void DrawCube(int centerX, int centerY, int size, float rotX, float rotY, float 
 */ 
 ProgressBarTypedef * ProgressBarInit(ProgressBarTypedef *barobj, uint8_t direction, uint8_t width, uint8_t high, uint16_t maxVal)
 {
+	TanLevPIDInit(&barobj->pidhandle, 15, 0.5, 0.2, -0.2);
+	
 	barobj->BarVal = 0;
 	barobj->maxVal = maxVal;
 	barobj->width = width;
@@ -766,8 +768,6 @@ ProgressBarTypedef * ProgressBarInit(ProgressBarTypedef *barobj, uint8_t directi
 */
 int16_t * ProgressBar(ProgressBarTypedef *barobj, int16_t x, int16_t y, uint16_t Val)
 {
-	const uint8_t speed1=9, speed2=5, speed3=3;
-
 	int16_t Barx,Bary;
 	uint16_t Barwidth, Barhigh;
 
@@ -776,57 +776,48 @@ int16_t * ProgressBar(ProgressBarTypedef *barobj, int16_t x, int16_t y, uint16_t
 	static int16_t xy[2];
 
 	if(Val > barobj->maxVal) Val = barobj->maxVal; //限幅
-	
+	barobj->BarVal = Val;
 	
 	if(barobj->animation == DISABLE) //无过度动画
 	{
 		if(barobj->direction % 2 == 0)
-			barobj->BarVal = (uint32_t)Val * (barobj->width - barobj->R*2)/ barobj->maxVal + barobj->R*2;
+			barobj->pixVal = (uint32_t)Val * (barobj->width - barobj->R*2)/ barobj->maxVal + barobj->R*2;
 		else
-			barobj->BarVal = (uint32_t)Val * (barobj->high - barobj->R*2)/ barobj->maxVal + barobj->R*2;
+			barobj->pixVal = (uint32_t)Val * (barobj->high - barobj->R*2)/ barobj->maxVal + barobj->R*2;
 	}
 	else    // 过度动画
 	{
-		//偏离程度
+		//到达值
 		if(barobj->direction % 2 == 0) //横向
-			dif = (int32_t)Val * (barobj->width - barobj->R*2)/ barobj->maxVal + barobj->R*2 - barobj->BarVal;
+			dif = (int32_t)Val * (barobj->width - barobj->R*2)/ barobj->maxVal + barobj->R*2;
 		else
-			dif = (int32_t)Val * (barobj->high - barobj->R*2)/ barobj->maxVal + barobj->R*2 - barobj->BarVal;
+			dif = (int32_t)Val * (barobj->high - barobj->R*2)/ barobj->maxVal + barobj->R*2;
 
-		if(dif != 0)
-		{
-			if( myabs(dif) > speed1 ) 
-				barobj->BarVal += dif>0?speed1:-speed1;
-			else if( myabs(dif) > speed2 ) 
-				barobj->BarVal += dif>0?speed2:-speed2;
-			else if( myabs(dif) > speed3 ) 
-				barobj->BarVal += dif>0?speed3:-speed3;
-			else 
-				barobj->BarVal += dif>0?1:-1;
-		}
+			barobj->pixVal = TandemLevel_PID(&barobj->pidhandle, dif, barobj->pixVal);
+
 	}
 	
-	if(barobj->BarVal < barobj->R*2) barobj->BarVal = barobj->R*2; //最小指示
+	if(barobj->pixVal < barobj->R*2) barobj->pixVal = barobj->R*2; //最小指示
 	
 	switch(barobj->direction) //显示方向
 	{
 		case 0:
-			Barx=x; Bary=y; Barwidth=barobj->BarVal; Barhigh=barobj->high;
+			Barx=x; Bary=y; Barwidth=barobj->pixVal; Barhigh=barobj->high;
 			xy[0] = Barx + Barwidth;
 			xy[1] = Bary + Barhigh/2;
 		break;
 		case 1:
-			Barx=x; Bary=y; Barwidth=barobj->width; Barhigh=barobj->BarVal;
+			Barx=x; Bary=y; Barwidth=barobj->width; Barhigh=barobj->pixVal;
 			xy[0] = Barx + Barwidth/2;
 			xy[1] = Bary + Barhigh;
 		break;
 		case 2:
-			Barx=x + barobj->width - barobj->BarVal; Bary=y; Barwidth=barobj->BarVal; Barhigh=barobj->high;
+			Barx=x + barobj->width - barobj->pixVal; Bary=y; Barwidth=barobj->pixVal; Barhigh=barobj->high;
 			xy[0] = Barx;
 			xy[1] = Bary + Barhigh/2;
 		break;
 		case 3:
-			Barx=x; Bary=y + barobj->high - barobj->BarVal; Barwidth=barobj->width; Barhigh=barobj->BarVal;
+			Barx=x; Bary=y + barobj->high - barobj->pixVal; Barwidth=barobj->width; Barhigh=barobj->pixVal;
 			xy[0] = Barx + Barwidth/2;
 			xy[1] = Bary;
 		break;
@@ -838,6 +829,14 @@ int16_t * ProgressBar(ProgressBarTypedef *barobj, int16_t x, int16_t y, uint16_t
 		DrawRoundRect(x, y, barobj->width, barobj->high, barobj->R);
 
 	return xy;
+}
+/*
+	功能：获取bar的值
+	barobj：句柄
+*/
+uint16_t getBarVal(ProgressBarTypedef *barobj)
+{
+	return barobj->BarVal;
 }
 //进度条属性设置
 void SetProBarAttibute(ProgressBarTypedef *barobj, uint8_t attibute)

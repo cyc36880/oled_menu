@@ -49,8 +49,19 @@ FontInfoType * MenuShowNum(menu_area *target, int16_t x, int16_t y, uint8_t len,
 	ret：输出的字符个数
 	注意：内部申请固定内存100字节，不要输出太长字符串
 */
-FontInfoType* m_printf(menu_area *target, uint8_t mod, int16_t x, int16_t y, const char *format, ...);
+FontInfoType* m_printf(menu_area *target, int16_t x, int16_t y, const char *format, ...);
 
+
+
+/*
+	功能：字符串处理
+	
+	str：字符串（ \0 结尾）
+	
+	ret：处理后的信息
+*/
+
+FontInfoType* StringDeal(const uint8_t *str);
 
 /*
 	功能：自动调整指示器尺寸
@@ -61,7 +72,7 @@ FontInfoType* m_printf(menu_area *target, uint8_t mod, int16_t x, int16_t y, con
 	limitSize：尺寸限制，不设置可置NULL。内容为{最窄，最矮， 最宽，最高}，某位不限制可以置0
 	ret：发生尺寸修改时，返回1， 无则返回0
 */
-uint8_t SetIndicatorSize(FontInfoType *FontInfo, menu_area *target, uint8_t mod, uint8_t *limitSize);
+uint8_t SetIndicatorSize(FontInfoType *FontInfo, menu_area *target, const uint8_t *limitSize);
 
 
 

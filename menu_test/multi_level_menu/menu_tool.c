@@ -166,11 +166,17 @@ static void ChangeMenuX(menu_area *target, int16_t showSX, int16_t showEX, int16
 */
 uint8_t ScrollingDisplay_X(menu_area *target, int16_t showSX, int16_t showEX, int16_t TarSX, int16_t TarEX, uint8_t style) 
 {
-	const uint8_t speed1=17, speed2=9, speed3=3;
+	static TanLevPIDTypedef pid = {0.5, 0, 0, 35};
+	uint8_t offsets=0;
+	
 	uint8_t state = 1;
 
 	menu_area *p;
 
+	if(pid.P < 0.5) offsets = 1/pid.P;
+	else if(pid.P < 1) offsets=1;
+	else offsets = 0;
+	
 	p = FindMeunListHeard(target);
 	
 	if( !(p->specialfeatures & MenuScrollingX) ) {
@@ -185,10 +191,7 @@ uint8_t ScrollingDisplay_X(menu_area *target, int16_t showSX, int16_t showEX, in
 		if(style == 0)  //直达
 			ChangeMenuX(target, showSX, showEX, TarSX-target->x, 0);
 		else { //滚动
-				if(TarSX-target->x > speed1) ChangeMenuX(target, showSX, showEX, speed1, 1);
-				else if(TarSX-target->x>speed2) ChangeMenuX(target, showSX, showEX, speed2, 1);
-				else if(TarSX-target->x>speed3) ChangeMenuX(target, showSX, showEX, speed3, 1);
-				else ChangeMenuX(target, showSX, showEX, 1, 1);
+			ChangeMenuX(target, showSX, showEX, TarSX-TandemLevel_PID(&pid, target->x-offsets, TarSX), 1);
 				state = 0;
 		}
 	}
@@ -197,10 +200,7 @@ uint8_t ScrollingDisplay_X(menu_area *target, int16_t showSX, int16_t showEX, in
 			ChangeMenuX(target, showSX, showEX, TarEX-target->x - target->width+1, 0);
 		}
 		else {
-			if(target->x+target->width-TarEX>speed1) ChangeMenuX(target, showSX, showEX, -speed1, 1);
-			else if(target->x+target->width-TarEX>speed2) ChangeMenuX(target, showSX, showEX, -speed2, 1);
-			else if(target->x+target->width-TarEX>speed3) ChangeMenuX(target, showSX, showEX, -speed3, 1);
-			else ChangeMenuX(target, showSX, showEX, -1, 1);
+			ChangeMenuX(target, showSX, showEX, TarEX-TandemLevel_PID(&pid, target->x+target->width+offsets, TarEX), 1);
 			state = 0;
 		}
 	}
@@ -264,11 +264,17 @@ static void ChangeMenuY(menu_area *target, int16_t showSY, int16_t showEY, int16
 */
 uint8_t ScrollingDisplay_Y(menu_area *target, int16_t showSY, int16_t showEY, int16_t TarSY, int16_t TarEY, uint8_t style) 
 {
-	const uint8_t speed1=17, speed2=9, speed3=3;
+	static TanLevPIDTypedef pid = {0.5, 0, 0, 35};
+	uint8_t offsets = 0;
+	
 	uint8_t state = 1;
 	menu_area *p;
 	
 	if(target == NULL) return 1;
+	
+	if(pid.P < 0.5) offsets = 1/pid.P;
+	else if(pid.P < 1) offsets=1;
+	else offsets = 0;
 	
 	p = FindMeunListHeard(target);
 	
@@ -280,14 +286,12 @@ uint8_t ScrollingDisplay_Y(menu_area *target, int16_t showSY, int16_t showEY, in
 	if(showSY > TarSY) showSY = TarSY;
 	if(TarEY > showEY) TarEY = showEY;
 	
+	
 	if(target->y < TarSY) {
 		if(style == 0)  //直达
 			ChangeMenuY(target, showSY, showEY, TarSY-target->y, 0);
-		else { //滚动
-			if(TarSY-target->y>speed1) ChangeMenuY(target, showSY, showEY, speed1, 1);
-			else if(TarSY-target->y>speed2) ChangeMenuY(target, showSY, showEY, speed2, 1);
-			else if(TarSY-target->y>speed3) ChangeMenuY(target, showSY, showEY, speed3, 1);
-			else ChangeMenuY(target, showSY, showEY, 1, 1);
+		else { //滚动			
+			ChangeMenuY(target, showSY, showEY, TarSY-TandemLevel_PID(&pid, target->y-offsets, TarSY), 1);
 		}
 		state = 0;          
 	}
@@ -295,10 +299,7 @@ uint8_t ScrollingDisplay_Y(menu_area *target, int16_t showSY, int16_t showEY, in
 		if(style == 0) 
 			ChangeMenuY(target, showSY, showEY, TarEY-target->y - target->high+1, 0);
 		else {
-			if(target->y+target->high-TarEY>speed1) ChangeMenuY(target, showSY, showEY, -speed1, 1);
-			else if(target->y+target->high-TarEY>speed2) ChangeMenuY(target, showSY, showEY, -speed2, 1);
-			else if(target->y+target->high-TarEY>speed3) ChangeMenuY(target, showSY, showEY, -speed3, 1);
-			else ChangeMenuY(target, showSY, showEY, -1, 1);
+			ChangeMenuY(target, showSY, showEY, TarEY-TandemLevel_PID(&pid, target->y+target->high+offsets, TarEY), 1);
 		}
 		state = 0;
 	}
@@ -353,9 +354,10 @@ void MenuCoorAlignment(menu_area *target, uint8_t mod)
  */
 uint8_t MenuCoorRecovery(menu_area *target, uint8_t mod, uint8_t style)
 {
-	const uint8_t speed1=17, speed2=5, speed3=2;
 	uint8_t state=1;
-
+	static TanLevPIDTypedef pid = {0.4, 0, 0, 15};//pid参数
+	
+	uint8_t offsets=0;
 	
 	if(target == NULL) return 1;
 
@@ -366,7 +368,10 @@ uint8_t MenuCoorRecovery(menu_area *target, uint8_t mod, uint8_t style)
 	int16_t dif;
 
 	if(MenuShowHeard == MenuShowTail) return 1;
-
+	if(pid.P < 0.5) offsets = 1/pid.P;
+	else if(pid.P < 1) offsets=1;
+	else offsets = 0;
+	
 	p = MenuShowHeard->next;
 
 	for( ; ; )
@@ -381,14 +386,7 @@ uint8_t MenuCoorRecovery(menu_area *target, uint8_t mod, uint8_t style)
 				dif = p->y - (p->previous->y + p->previous->high);
 				if(dif != 0)
 				{
-					if( myabs(dif) > speed1) 
-						p->y += dif<0?speed1:-speed1;
-					else if( myabs(dif) > speed2) 
-						p->y += dif<0?speed2:-speed2;
-					else if( myabs(dif) > speed3) 
-						p->y += dif<0?speed3:-speed3;
-					else
-						p->y += dif<0?1:-1;
+					p->y = TandemLevel_PID(&pid, p->previous->y + p->previous->high+offsets, p->y);
 					state = 0;
 				}
 			}
@@ -402,14 +400,7 @@ uint8_t MenuCoorRecovery(menu_area *target, uint8_t mod, uint8_t style)
 				dif = p->x - (p->previous->x + p->previous->width);
 				if(dif != 0)
 				{
-					if( myabs(dif) > speed1) 
-						p->x += dif<0?speed1:-speed1;
-					else if( myabs(dif) > speed2) 
-						p->x += dif<0?speed2:-speed2;
-					else if( myabs(dif) > speed3) 
-						p->x += dif<0?speed3:-speed3;
-					else
-						p->x += dif<0?1:-1;
+					p->x = TandemLevel_PID(&pid, p->previous->x + p->previous->width+1, p->x);
 					state = 0;
 				}
 			}
@@ -424,7 +415,7 @@ uint8_t MenuCoorRecovery(menu_area *target, uint8_t mod, uint8_t style)
 /*
 	功能：列表切换实例（有动画效果）
 				列表的 展开 与 滚动
-	mes：消息句柄
+	mes：消息句柄--（按键消息）
 	start：指示器允许起始位置
 	end：  指示器允许结束位置
 	dir：  方向。0 纵向，1横向
@@ -432,7 +423,7 @@ uint8_t MenuCoorRecovery(menu_area *target, uint8_t mod, uint8_t style)
 	注意：当使用“特殊功能”的EnterMenu来堆叠菜单 （MenuCoorAlignment） 时，此函数应比
 			MenuCoorAlignment执行的优先级低，（如可放入在 MenuAlwaysRun_PM）
 */
-void ListSwitchIns(MessageTypedef *mes, bool dir, int16_t start, int16_t end)
+void ListSwitchIns(MessageTypedef *key_mes, bool dir, int16_t start, int16_t end)
 {
 	uint8_t sta=0;
 	uint8_t (*ScrollingDisplay)(menu_area *target, int16_t showSY, int16_t showEY, int16_t TarSY, int16_t TarEY, uint8_t style);
@@ -442,18 +433,18 @@ void ListSwitchIns(MessageTypedef *mes, bool dir, int16_t start, int16_t end)
 	else
 		ScrollingDisplay = ScrollingDisplay_X;
 
-	if( MesHave((*mes)) ) //有消息
+	if( MesHave((*key_mes)) ) //有消息
 	{
-		if(MesRead( (*mes) ) == Menu_Father) {
+		if(MesRead( (*key_mes) ) == Menu_Father) {
 			if(MenuCoorRecovery(TargetMenu, dir, 1)) {
 				if(ScrollingDisplay(TargetMenu, start, end, start, end, 1))
-					MesClear( (*mes) );
+					MesClear( (*key_mes) );
 			}
 		}
 		else {
 			sta += MenuCoorRecovery(TargetMenu, dir, 1);
 			sta += ScrollingDisplay(TargetMenu, start, end, start, end, 1);
-			if(sta == 2) MesClear( (*mes) );
+			if(sta == 2) MesClear( (*key_mes) );
 		}
 	}
 }
@@ -696,6 +687,63 @@ bool tRunOne(TypeRunOne *RunOne, bool t, uint32_t dat1,uint32_t dat2)
 	}
 	return 0;
 }
+
+
+/******************** 串级PID **********************/
+
+/*
+	功能：pid初始化
+	pidhandle：句柄
+	maxval：最终返回值的绝对值最值
+	P、I、D；pid参数
+*/
+TanLevPIDTypedef *TanLevPIDInit(TanLevPIDTypedef *pidhandle, uint16_t maxval, float P, float I, float D)
+{
+	ClearnMemory(pidhandle, sizeof(TanLevPIDTypedef)); //内存清空
+	
+	pidhandle->P = P;
+	pidhandle->I = I;
+	pidhandle->D = D;
+	pidhandle->maxval = maxval;
+	
+	return pidhandle;
+}
+
+/*
+	功能：输出pid最终值
+
+	wantval：欲到达值
+	nowval：目前值
+*/
+float TandemLevel_PID(TanLevPIDTypedef *pidhandle, float wantval, float nowval)
+{
+	float retval=0;
+	float diffval = wantval - nowval; //差值
+	float d_val=0;
+	
+	retval = diffval*pidhandle->P; //p值
+	retval = retval>pidhandle->maxval?pidhandle->maxval:\
+					(retval<-pidhandle->maxval?-pidhandle->maxval:retval);
+
+	pidhandle->i_val += diffval; //积分
+	pidhandle->i_val = pidhandle->i_val>pidhandle->maxval?pidhandle->maxval:\
+									(pidhandle->i_val<-pidhandle->maxval?-pidhandle->maxval:pidhandle->i_val);
+	
+	d_val = diffval - pidhandle->last_diff;
+	pidhandle->last_diff = diffval;
+	d_val = d_val>pidhandle->maxval?pidhandle->maxval:\
+					(d_val<-pidhandle->maxval?-pidhandle->maxval:d_val);
+	
+
+	retval = retval + pidhandle->i_val*pidhandle->I + d_val*pidhandle->D;
+	retval = retval>pidhandle->maxval?pidhandle->maxval:\
+					(retval<-pidhandle->maxval?-pidhandle->maxval:retval);
+	
+	return nowval + retval;
+}
+
+
+
 
 
 // ****** 工具 **********

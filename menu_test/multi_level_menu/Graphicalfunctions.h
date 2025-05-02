@@ -104,6 +104,7 @@ enum PROGRESSBAR_ATTR
 typedef struct  PROGRESSBAR
 {
 	uint16_t BarVal;    //存储变量
+	uint16_t pixVal;    //进度条像素信息
 	uint16_t maxVal;    //允许最大值
 	uint8_t width;     //宽度
 	uint8_t high;       //高度
@@ -111,7 +112,7 @@ typedef struct  PROGRESSBAR
 	uint8_t attribute;  //属性
 	bool animation;     //动画
 	uint8_t direction;  //方向 0-3
-	
+	TanLevPIDTypedef pidhandle; //pid
 }ProgressBarTypedef;
 
 /*
@@ -136,6 +137,10 @@ ProgressBarTypedef * ProgressBarInit(ProgressBarTypedef *barobj, uint8_t directi
 	注意：默认无动效，需自主使能 animation ，并定时调用
 */
 int16_t * ProgressBar(ProgressBarTypedef *barobj, int16_t x, int16_t y, uint16_t Val);
+
+
+//功能：获取bar的值
+uint16_t getBarVal(ProgressBarTypedef *barobj);
 
 //进度条属性设置
 void SetProBarAttibute(ProgressBarTypedef *barobj, uint8_t attibute);

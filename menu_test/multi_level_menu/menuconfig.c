@@ -6,51 +6,48 @@
 #include "Graphicalfunctions.h" // 图形化函数
 #include "menu_tool.h" //工具
 
+MessageTypedef mes;
 
-ProgressBarTypedef Bar; //进度条
-MessageTypedef Mes;  //消息-滚动列表
+ProgressBarTypedef bar;
 
-menu_area menumain;
-menu_area menutest;
-menu_area menuArray[10];
-menu_area menuTail;
+const uint8_t *menutext[] = 
+{
+	"7k7k",
+	"123",
+	"456",
+	"56789",
+	"a滋生\nd",
+	"cdeqwe",
+	"12滋生34",
+	"33\n44",
+	"34444"
+};
+menu_area menuarray[sizeof(menutext)/sizeof(menutext[0])];
+const uint8_t MenuNum = sizeof(menutext)/sizeof(menutext[0]);
 
-menu_area menu2;
-
-void test1_1(menu_area *target);
-void test1_2(menu_area *target);
-void MenuTail(menu_area *target);
-
-static int8_t count = 0;
+void ment_f(menu_area *target);
 
 /*
 	功能：初始化菜单列表 <此函数名不可修改>
 */
 static void MakeMenu(void)
 {
-	MesInit_Key(&Mes);//消息
-
+	TargetMenu = &menuarray[0];
 	
-	ProgressBarInit(&Bar, 0, 50, 14, 10)->animation=ENABLE; //使能进度条动画
-	
-	TargetMenu = &menumain;
 	TargetMenuPointrt.style = ENABLE; //使能指示器动画
 	
+	MesInit_Key(&mes);
+	
 	AddToFunctionTicker(50, normalRun, MenuRefresh, 0); //所有界面刷新
-	
 
-	SetMenu(&menumain, MSCX(16*2), MSCY(16), 16*2, 16, ENABLE, NULL)->menuinterface = test1_1;
+	SetMenu(&menuarray[0], 0, 0, 16*3, 16, ENABLE, NULL);
 	
-		SetMenu(&menutest, 0, 0, 16*2, 16, ENABLE, NULL)->menuinterface = test1_2;
-		BatchFastSimilarMenuDown(&menutest, menuArray, 10, 2, test1_2);
-		LinkToParentClass(&menumain, &menutest); //链接到父类
-		FastSimilarMenuDown(&menutest, &menuTail, 2)->menuinterface = MenuTail; //添加尾特，并殊处理
-		menuTail.checked = DISABLE;
-		MakeMenuListRing(&menutest); //首尾相连
-		AddToSpecialFunction(&menuTail, EnterMenu, 0); //特殊功能
+	BatchFastSimilarMenuDown(menuarray, menuarray, MenuNum, 2, ment_f);
+	MakeMenuListRing(menuarray);
+
 	
-			SetMenu(&menu2, 0, 0, 32, 16, ENABLE, NULL)->menuinterface = test1_1;
-			LinkToParentClass(&menuArray[2], &menu2);//链接到父类
+	ProgressBarInit(&bar, 0, 60, 15, sizeof(menutext)/sizeof(menutext[0]))->animation = ENABLE;
+	
 }
 
 /*
@@ -59,57 +56,41 @@ static void MakeMenu(void)
 */
 
 
-void test1_1(menu_area *target)
+void ment_f(menu_area *target)
 {
-	FontInfoType *fontinfo;
+	FontInfoType *FontInfo;
 	
-	uint8_t limitsize[] = {30, 20, 0, 0};
+	const uint8_t *str = menutext[target->id-1];
 	
-//	fontinfo = MenuShowNum(target, 0, 0, 0, target->id);
+	FontInfo = StringDeal(str);
 	
-	if(count < 20)
+	switch(target->id)
 	{
-		fontinfo = m_printf(target, 1, 0, 0, "1滋2\nabc\nccd123");
-	}
-	else
-	{
-		fontinfo = m_printf(target, 1, 0, 0, "12");
-	}
-	
-	if(SetIndicatorSize(fontinfo, target, 1, limitsize)) // 尺寸自动调整
-	{
-		MesBro_Key(Menu_noaction);
-	}
+		case 6:
+			SetFont(F6X8);
+			
 
-	if(count > 20)
-		gotoMenu(&menutest, Menu_Sub);
-
-	
-	
-}
-
-void test1_2(menu_area *target)
-{
-	FontInfoType *fontinfo;
-	
-	fontinfo = MenuShowNum(target, 0, 0, 0, target->id);
-	
-	SetIndicatorSize(fontinfo, target, 0, NULL); // 尺寸自动调整
-}
-
-void MenuTail(menu_area *target)
-{
-	if(TriggerCheck(target, EnterMenu))
-	{
-		if( FindMeunListHeard(TargetMenuPointrt.LastTargetMenuP) == &menumain)
-		{
-			ScrollingDisplay_Y( FindMeunListHeard(target) , 0, 3000, 0, 63, 0); // 消除 切入菜单列表时 滚动效果， 注意 showSY与showEY的大小
-		}
+			
+		break;
 		
-		MenuCoorAlignment(TargetMenu, 0); //菜单折叠
-		return;
+		default:
+		
+		break;
 	}
+	if(FontInfo->hznum) //判断是否有汉字
+		CharacterTextC(target, 0, 0, FontInfo->maxPix+10, str);
+	else
+		CharacterText(target, 0, 0, FontInfo->ascnum, str);
+	
+	if(SetIndicatorSize(FontInfo, target, NULL)) //指示器变化
+	{
+		MesBro_Key(Menu_noaction); //发送空白消息
+	}
+	SetFont(F8X16); //复位字体大小
 }
+
+
+
 
 
 
@@ -138,7 +119,6 @@ void AlwaysRun(void)
 void MenuAlwaysRun_PH(void)
 {
 	
-	MenuDynamicBlurry(0); //界面虚化
 	
 }
 
@@ -147,9 +127,7 @@ void MenuAlwaysRun_PH(void)
 /**** 菜单的每次刷新都会执行该函数 执行优先级中****/
 void MenuAlwaysRun_PM(void)
 {
-	
-	ListSwitchIns(&Mes, 0, 0, 63); //滚动列表
-	
+	ListSwitchIns(&mes, 0, 0, 63);
 }
 
 
@@ -157,18 +135,7 @@ void MenuAlwaysRun_PM(void)
 /**** 菜单的每次刷新都会执行该函数 执行优先级低 ****/
 void MenuAlwaysRun_PL(void)
 {
-	
-	if(++count > 40) count=0;
-	MenuShowNum(NULL, 70, 0, 0, count);
-	
-	Bar.maxVal = NextCancheMenuList(FindMeunListHeard(TargetMenu), -1)->id; //设置进度条最大值
-	
-	SetProBarAttibute(&Bar, hideframe);
-	ProgressBar(&Bar, 35, 40, TargetMenuPointrt.TargetMenuP->id); //进度条
-	DrawRoundRect(32, 37, Bar.width+6, Bar.high+6, Bar.R+2);
-
-	MenuDynamicBlurry(1);//界面虚化
-	
+	ProgressBar(&bar, 64, 40, TargetMenu->id);
 }
 
 
@@ -183,7 +150,7 @@ void MenuInit(void)
 
 	/* ********** USER BEGIN********** */
 	
-	
+	MenuCoorAlignment(TargetMenu, 0);
 	
 	/* ********** USER END ********** */
 	

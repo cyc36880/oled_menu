@@ -535,15 +535,15 @@ Section Cross References
     menuconfig.o(i.MenuInit) refers to menu_tool.o(i.MenuCoorAlignment) for MenuCoorAlignment
     menuconfig.o(i.MenuInit) refers to menu.o(.data) for TargetMenuPointrt
     menuconfig.o(i.ment_f) refers to menufontshow.o(i.StringDeal) for StringDeal
-    menuconfig.o(i.ment_f) refers to menufontshow.o(i.CharacterTextC) for CharacterTextC
     menuconfig.o(i.ment_f) refers to menufontshow.o(i.SetFont) for SetFont
+    menuconfig.o(i.ment_f) refers to menufontshow.o(i.CharacterTextC) for CharacterTextC
     menuconfig.o(i.ment_f) refers to menufontshow.o(i.CharacterText) for CharacterText
     menuconfig.o(i.ment_f) refers to menufontshow.o(i.SetIndicatorSize) for SetIndicatorSize
     menuconfig.o(i.ment_f) refers to menu_tool.o(i.MessageBroadcast) for MessageBroadcast
     menuconfig.o(i.ment_f) refers to menuconfig.o(.data) for .data
     menuconfig.o(i.ment_f) refers to oledfont.o(.constdata) for F6X8
-    menuconfig.o(i.ment_f) refers to oledfont.o(.constdata) for F8X16
     menuconfig.o(i.ment_f) refers to menu_tool.o(.data) for Message_Key
+    menuconfig.o(i.ment_f) refers to oledfont.o(.constdata) for F8X16
     menuconfig.o(.data) refers to menuconfig.o(.conststring) for .conststring
     graphicalfunctions.o(i.ClearnLineChartMapDat) refers to menu_tool.o(i.ClearnMemory) for ClearnMemory
     graphicalfunctions.o(i.DrawCircle) refers to graphicalfunctions.o(i.write_point) for write_point
@@ -2496,33 +2496,33 @@ Image Symbol Table
     i.inScreen                               0x08004104   Section        0  menu.o(i.inScreen)
     i.main                                   0x0800412c   Section        0  main.o(i.main)
     i.ment_f                                 0x08004170   Section        0  menuconfig.o(i.ment_f)
-    i.mystrlen                               0x08004218   Section        0  menufontshow.o(i.mystrlen)
-    mystrlen                                 0x08004219   Thumb Code    16  menufontshow.o(i.mystrlen)
-    i.read_point                             0x08004228   Section        0  graphicalfunctions.o(i.read_point)
-    i.write_point                            0x08004264   Section        0  graphicalfunctions.o(i.write_point)
-    x$fpl$fadd                               0x0800429c   Section      196  faddsub_clz.o(x$fpl$fadd)
-    _fadd1                                   0x080042ab   Thumb Code     0  faddsub_clz.o(x$fpl$fadd)
-    x$fpl$fcmpinf                            0x08004360   Section       24  fcmpi.o(x$fpl$fcmpinf)
-    x$fpl$fdiv                               0x08004378   Section      388  fdiv.o(x$fpl$fdiv)
-    _fdiv1                                   0x08004379   Thumb Code     0  fdiv.o(x$fpl$fdiv)
-    x$fpl$ffix                               0x080044fc   Section       54  ffix.o(x$fpl$ffix)
-    x$fpl$ffixu                              0x08004534   Section       62  ffixu.o(x$fpl$ffixu)
-    x$fpl$fflt                               0x08004574   Section       48  fflt_clz.o(x$fpl$fflt)
-    x$fpl$ffltu                              0x080045a4   Section       38  fflt_clz.o(x$fpl$ffltu)
-    x$fpl$fleqf                              0x080045cc   Section      104  fleqf.o(x$fpl$fleqf)
-    x$fpl$fmul                               0x08004634   Section      258  fmul.o(x$fpl$fmul)
-    x$fpl$fnaninf                            0x08004736   Section      140  fnaninf.o(x$fpl$fnaninf)
-    x$fpl$fretinf                            0x080047c2   Section       10  fretinf.o(x$fpl$fretinf)
-    x$fpl$frleqf                             0x080047cc   Section       98  frleqf.o(x$fpl$frleqf)
-    x$fpl$fsub                               0x08004830   Section      234  faddsub_clz.o(x$fpl$fsub)
-    _fsub1                                   0x0800483f   Thumb Code     0  faddsub_clz.o(x$fpl$fsub)
-    .constdata                               0x0800491a   Section       16  system_stm32f1xx.o(.constdata)
-    x$fpl$usenofp                            0x0800491a   Section        0  usenofp.o(x$fpl$usenofp)
-    .constdata                               0x0800492a   Section     1522  oledfont.o(.constdata)
-    .constdata                               0x08004f1c   Section      572  oledfont.o(.constdata)
-    .constdata                               0x08005158   Section        5  oledfont.o(.constdata)
-    .constdata                               0x0800515d   Section       64  oledfont.o(.constdata)
-    .conststring                             0x080051a0   Section       65  menuconfig.o(.conststring)
+    i.mystrlen                               0x080041e8   Section        0  menufontshow.o(i.mystrlen)
+    mystrlen                                 0x080041e9   Thumb Code    16  menufontshow.o(i.mystrlen)
+    i.read_point                             0x080041f8   Section        0  graphicalfunctions.o(i.read_point)
+    i.write_point                            0x08004234   Section        0  graphicalfunctions.o(i.write_point)
+    x$fpl$fadd                               0x0800426c   Section      196  faddsub_clz.o(x$fpl$fadd)
+    _fadd1                                   0x0800427b   Thumb Code     0  faddsub_clz.o(x$fpl$fadd)
+    x$fpl$fcmpinf                            0x08004330   Section       24  fcmpi.o(x$fpl$fcmpinf)
+    x$fpl$fdiv                               0x08004348   Section      388  fdiv.o(x$fpl$fdiv)
+    _fdiv1                                   0x08004349   Thumb Code     0  fdiv.o(x$fpl$fdiv)
+    x$fpl$ffix                               0x080044cc   Section       54  ffix.o(x$fpl$ffix)
+    x$fpl$ffixu                              0x08004504   Section       62  ffixu.o(x$fpl$ffixu)
+    x$fpl$fflt                               0x08004544   Section       48  fflt_clz.o(x$fpl$fflt)
+    x$fpl$ffltu                              0x08004574   Section       38  fflt_clz.o(x$fpl$ffltu)
+    x$fpl$fleqf                              0x0800459c   Section      104  fleqf.o(x$fpl$fleqf)
+    x$fpl$fmul                               0x08004604   Section      258  fmul.o(x$fpl$fmul)
+    x$fpl$fnaninf                            0x08004706   Section      140  fnaninf.o(x$fpl$fnaninf)
+    x$fpl$fretinf                            0x08004792   Section       10  fretinf.o(x$fpl$fretinf)
+    x$fpl$frleqf                             0x0800479c   Section       98  frleqf.o(x$fpl$frleqf)
+    x$fpl$fsub                               0x08004800   Section      234  faddsub_clz.o(x$fpl$fsub)
+    _fsub1                                   0x0800480f   Thumb Code     0  faddsub_clz.o(x$fpl$fsub)
+    .constdata                               0x080048ea   Section       16  system_stm32f1xx.o(.constdata)
+    x$fpl$usenofp                            0x080048ea   Section        0  usenofp.o(x$fpl$usenofp)
+    .constdata                               0x080048fa   Section     1522  oledfont.o(.constdata)
+    .constdata                               0x08004eec   Section      572  oledfont.o(.constdata)
+    .constdata                               0x08005128   Section        5  oledfont.o(.constdata)
+    .constdata                               0x0800512d   Section       64  oledfont.o(.constdata)
+    .conststring                             0x08005170   Section       65  menuconfig.o(.conststring)
     .data                                    0x20000000   Section       12  stm32f1xx_hal.o(.data)
     .data                                    0x2000000c   Section        4  system_stm32f1xx.o(.data)
     .data                                    0x20000010   Section       36  menuconfig.o(.data)
@@ -2889,41 +2889,41 @@ Image Symbol Table
     disp_flush                               0x080040c9   Thumb Code    44  oled.o(i.disp_flush)
     inScreen                                 0x08004105   Thumb Code    40  menu.o(i.inScreen)
     main                                     0x0800412d   Thumb Code    54  main.o(i.main)
-    ment_f                                   0x08004171   Thumb Code   152  menuconfig.o(i.ment_f)
-    read_point                               0x08004229   Thumb Code    54  graphicalfunctions.o(i.read_point)
-    write_point                              0x08004265   Thumb Code    50  graphicalfunctions.o(i.write_point)
-    __aeabi_fadd                             0x0800429d   Thumb Code     0  faddsub_clz.o(x$fpl$fadd)
-    _fadd                                    0x0800429d   Thumb Code   196  faddsub_clz.o(x$fpl$fadd)
-    __fpl_fcmp_Inf                           0x08004361   Thumb Code    24  fcmpi.o(x$fpl$fcmpinf)
-    __aeabi_fdiv                             0x08004379   Thumb Code     0  fdiv.o(x$fpl$fdiv)
-    _fdiv                                    0x08004379   Thumb Code   384  fdiv.o(x$fpl$fdiv)
-    __aeabi_f2iz                             0x080044fd   Thumb Code     0  ffix.o(x$fpl$ffix)
-    _ffix                                    0x080044fd   Thumb Code    54  ffix.o(x$fpl$ffix)
-    __aeabi_f2uiz                            0x08004535   Thumb Code     0  ffixu.o(x$fpl$ffixu)
-    _ffixu                                   0x08004535   Thumb Code    62  ffixu.o(x$fpl$ffixu)
-    __aeabi_i2f                              0x08004575   Thumb Code     0  fflt_clz.o(x$fpl$fflt)
-    _fflt                                    0x08004575   Thumb Code    48  fflt_clz.o(x$fpl$fflt)
-    __aeabi_ui2f                             0x080045a5   Thumb Code     0  fflt_clz.o(x$fpl$ffltu)
-    _ffltu                                   0x080045a5   Thumb Code    38  fflt_clz.o(x$fpl$ffltu)
-    __aeabi_cfcmple                          0x080045cd   Thumb Code     0  fleqf.o(x$fpl$fleqf)
-    _fcmple                                  0x080045cd   Thumb Code   104  fleqf.o(x$fpl$fleqf)
-    __fpl_fcmple_InfNaN                      0x0800461f   Thumb Code     0  fleqf.o(x$fpl$fleqf)
-    __aeabi_fmul                             0x08004635   Thumb Code     0  fmul.o(x$fpl$fmul)
-    _fmul                                    0x08004635   Thumb Code   258  fmul.o(x$fpl$fmul)
-    __fpl_fnaninf                            0x08004737   Thumb Code   140  fnaninf.o(x$fpl$fnaninf)
-    __fpl_fretinf                            0x080047c3   Thumb Code    10  fretinf.o(x$fpl$fretinf)
-    __aeabi_cfrcmple                         0x080047cd   Thumb Code     0  frleqf.o(x$fpl$frleqf)
-    _frcmple                                 0x080047cd   Thumb Code    98  frleqf.o(x$fpl$frleqf)
-    __aeabi_fsub                             0x08004831   Thumb Code     0  faddsub_clz.o(x$fpl$fsub)
-    _fsub                                    0x08004831   Thumb Code   234  faddsub_clz.o(x$fpl$fsub)
-    AHBPrescTable                            0x0800491a   Data          16  system_stm32f1xx.o(.constdata)
-    __I$use$fp                               0x0800491a   Number         0  usenofp.o(x$fpl$usenofp)
-    F8X16                                    0x0800492a   Data        1522  oledfont.o(.constdata)
-    F6X8                                     0x08004f1c   Data         572  oledfont.o(.constdata)
-    HZK16x16index                            0x08005158   Data           5  oledfont.o(.constdata)
-    HZK16x16                                 0x0800515d   Data          64  oledfont.o(.constdata)
-    Region$$Table$$Base                      0x080051e4   Number         0  anon$$obj.o(Region$$Table)
-    Region$$Table$$Limit                     0x08005204   Number         0  anon$$obj.o(Region$$Table)
+    ment_f                                   0x08004171   Thumb Code   104  menuconfig.o(i.ment_f)
+    read_point                               0x080041f9   Thumb Code    54  graphicalfunctions.o(i.read_point)
+    write_point                              0x08004235   Thumb Code    50  graphicalfunctions.o(i.write_point)
+    __aeabi_fadd                             0x0800426d   Thumb Code     0  faddsub_clz.o(x$fpl$fadd)
+    _fadd                                    0x0800426d   Thumb Code   196  faddsub_clz.o(x$fpl$fadd)
+    __fpl_fcmp_Inf                           0x08004331   Thumb Code    24  fcmpi.o(x$fpl$fcmpinf)
+    __aeabi_fdiv                             0x08004349   Thumb Code     0  fdiv.o(x$fpl$fdiv)
+    _fdiv                                    0x08004349   Thumb Code   384  fdiv.o(x$fpl$fdiv)
+    __aeabi_f2iz                             0x080044cd   Thumb Code     0  ffix.o(x$fpl$ffix)
+    _ffix                                    0x080044cd   Thumb Code    54  ffix.o(x$fpl$ffix)
+    __aeabi_f2uiz                            0x08004505   Thumb Code     0  ffixu.o(x$fpl$ffixu)
+    _ffixu                                   0x08004505   Thumb Code    62  ffixu.o(x$fpl$ffixu)
+    __aeabi_i2f                              0x08004545   Thumb Code     0  fflt_clz.o(x$fpl$fflt)
+    _fflt                                    0x08004545   Thumb Code    48  fflt_clz.o(x$fpl$fflt)
+    __aeabi_ui2f                             0x08004575   Thumb Code     0  fflt_clz.o(x$fpl$ffltu)
+    _ffltu                                   0x08004575   Thumb Code    38  fflt_clz.o(x$fpl$ffltu)
+    __aeabi_cfcmple                          0x0800459d   Thumb Code     0  fleqf.o(x$fpl$fleqf)
+    _fcmple                                  0x0800459d   Thumb Code   104  fleqf.o(x$fpl$fleqf)
+    __fpl_fcmple_InfNaN                      0x080045ef   Thumb Code     0  fleqf.o(x$fpl$fleqf)
+    __aeabi_fmul                             0x08004605   Thumb Code     0  fmul.o(x$fpl$fmul)
+    _fmul                                    0x08004605   Thumb Code   258  fmul.o(x$fpl$fmul)
+    __fpl_fnaninf                            0x08004707   Thumb Code   140  fnaninf.o(x$fpl$fnaninf)
+    __fpl_fretinf                            0x08004793   Thumb Code    10  fretinf.o(x$fpl$fretinf)
+    __aeabi_cfrcmple                         0x0800479d   Thumb Code     0  frleqf.o(x$fpl$frleqf)
+    _frcmple                                 0x0800479d   Thumb Code    98  frleqf.o(x$fpl$frleqf)
+    __aeabi_fsub                             0x08004801   Thumb Code     0  faddsub_clz.o(x$fpl$fsub)
+    _fsub                                    0x08004801   Thumb Code   234  faddsub_clz.o(x$fpl$fsub)
+    AHBPrescTable                            0x080048ea   Data          16  system_stm32f1xx.o(.constdata)
+    __I$use$fp                               0x080048ea   Number         0  usenofp.o(x$fpl$usenofp)
+    F8X16                                    0x080048fa   Data        1522  oledfont.o(.constdata)
+    F6X8                                     0x08004eec   Data         572  oledfont.o(.constdata)
+    HZK16x16index                            0x08005128   Data           5  oledfont.o(.constdata)
+    HZK16x16                                 0x0800512d   Data          64  oledfont.o(.constdata)
+    Region$$Table$$Base                      0x080051b4   Number         0  anon$$obj.o(Region$$Table)
+    Region$$Table$$Limit                     0x080051d4   Number         0  anon$$obj.o(Region$$Table)
     uwTickFreq                               0x20000000   Data           1  stm32f1xx_hal.o(.data)
     uwTickPrio                               0x20000004   Data           4  stm32f1xx_hal.o(.data)
     uwTick                                   0x20000008   Data           4  stm32f1xx_hal.o(.data)
@@ -2962,9 +2962,9 @@ Memory Map of the image
 
   Image Entry point : 0x080000ed
 
-  Load Region LR_IROM1 (Base: 0x08000000, Size: 0x0000535c, Max: 0x00010000, ABSOLUTE, COMPRESSED[0x00005264])
+  Load Region LR_IROM1 (Base: 0x08000000, Size: 0x0000532c, Max: 0x00010000, ABSOLUTE, COMPRESSED[0x00005234])
 
-    Execution Region ER_IROM1 (Exec base: 0x08000000, Load base: 0x08000000, Size: 0x00005204, Max: 0x00010000, ABSOLUTE)
+    Execution Region ER_IROM1 (Exec base: 0x08000000, Load base: 0x08000000, Size: 0x000051d4, Max: 0x00010000, ABSOLUTE)
 
     Exec Addr    Load Addr    Size         Type   Attr      Idx    E Section Name        Object
 
@@ -3216,40 +3216,40 @@ Memory Map of the image
     0x080040c8   0x080040c8   0x0000003c   Code   RO         4155    i.disp_flush        oled.o
     0x08004104   0x08004104   0x00000028   Code   RO         3636    i.inScreen          menu.o
     0x0800412c   0x0800412c   0x00000044   Code   RO           15    i.main              main.o
-    0x08004170   0x08004170   0x000000a8   Code   RO         3195    i.ment_f            menuconfig.o
-    0x08004218   0x08004218   0x00000010   Code   RO         4032    i.mystrlen          menufontshow.o
-    0x08004228   0x08004228   0x0000003c   Code   RO         3403    i.read_point        graphicalfunctions.o
-    0x08004264   0x08004264   0x00000038   Code   RO         3404    i.write_point       graphicalfunctions.o
-    0x0800429c   0x0800429c   0x000000c4   Code   RO         4314    x$fpl$fadd          fz_ws.l(faddsub_clz.o)
-    0x08004360   0x08004360   0x00000018   Code   RO         4570    x$fpl$fcmpinf       fz_ws.l(fcmpi.o)
-    0x08004378   0x08004378   0x00000184   Code   RO         4321    x$fpl$fdiv          fz_ws.l(fdiv.o)
-    0x080044fc   0x080044fc   0x00000036   Code   RO         4324    x$fpl$ffix          fz_ws.l(ffix.o)
-    0x08004532   0x08004532   0x00000002   PAD
-    0x08004534   0x08004534   0x0000003e   Code   RO         4328    x$fpl$ffixu         fz_ws.l(ffixu.o)
-    0x08004572   0x08004572   0x00000002   PAD
-    0x08004574   0x08004574   0x00000030   Code   RO         4333    x$fpl$fflt          fz_ws.l(fflt_clz.o)
-    0x080045a4   0x080045a4   0x00000026   Code   RO         4332    x$fpl$ffltu         fz_ws.l(fflt_clz.o)
-    0x080045ca   0x080045ca   0x00000002   PAD
-    0x080045cc   0x080045cc   0x00000068   Code   RO         4338    x$fpl$fleqf         fz_ws.l(fleqf.o)
-    0x08004634   0x08004634   0x00000102   Code   RO         4340    x$fpl$fmul          fz_ws.l(fmul.o)
-    0x08004736   0x08004736   0x0000008c   Code   RO         4572    x$fpl$fnaninf       fz_ws.l(fnaninf.o)
-    0x080047c2   0x080047c2   0x0000000a   Code   RO         4574    x$fpl$fretinf       fz_ws.l(fretinf.o)
-    0x080047cc   0x080047cc   0x00000062   Code   RO         4342    x$fpl$frleqf        fz_ws.l(frleqf.o)
-    0x0800482e   0x0800482e   0x00000002   PAD
-    0x08004830   0x08004830   0x000000ea   Code   RO         4316    x$fpl$fsub          fz_ws.l(faddsub_clz.o)
-    0x0800491a   0x0800491a   0x00000000   Code   RO         4584    x$fpl$usenofp       fz_ws.l(usenofp.o)
-    0x0800491a   0x0800491a   0x00000010   Data   RO         3153    .constdata          system_stm32f1xx.o
-    0x0800492a   0x0800492a   0x000005f2   Data   RO         4200    .constdata          oledfont.o
-    0x08004f1c   0x08004f1c   0x0000023c   Data   RO         4201    .constdata          oledfont.o
-    0x08005158   0x08005158   0x00000005   Data   RO         4202    .constdata          oledfont.o
-    0x0800515d   0x0800515d   0x00000040   Data   RO         4203    .constdata          oledfont.o
-    0x0800519d   0x0800519d   0x00000003   PAD
-    0x080051a0   0x080051a0   0x00000041   Data   RO         3198    .conststring        menuconfig.o
-    0x080051e1   0x080051e1   0x00000003   PAD
-    0x080051e4   0x080051e4   0x00000020   Data   RO         4822    Region$$Table       anon$$obj.o
+    0x08004170   0x08004170   0x00000078   Code   RO         3195    i.ment_f            menuconfig.o
+    0x080041e8   0x080041e8   0x00000010   Code   RO         4032    i.mystrlen          menufontshow.o
+    0x080041f8   0x080041f8   0x0000003c   Code   RO         3403    i.read_point        graphicalfunctions.o
+    0x08004234   0x08004234   0x00000038   Code   RO         3404    i.write_point       graphicalfunctions.o
+    0x0800426c   0x0800426c   0x000000c4   Code   RO         4314    x$fpl$fadd          fz_ws.l(faddsub_clz.o)
+    0x08004330   0x08004330   0x00000018   Code   RO         4570    x$fpl$fcmpinf       fz_ws.l(fcmpi.o)
+    0x08004348   0x08004348   0x00000184   Code   RO         4321    x$fpl$fdiv          fz_ws.l(fdiv.o)
+    0x080044cc   0x080044cc   0x00000036   Code   RO         4324    x$fpl$ffix          fz_ws.l(ffix.o)
+    0x08004502   0x08004502   0x00000002   PAD
+    0x08004504   0x08004504   0x0000003e   Code   RO         4328    x$fpl$ffixu         fz_ws.l(ffixu.o)
+    0x08004542   0x08004542   0x00000002   PAD
+    0x08004544   0x08004544   0x00000030   Code   RO         4333    x$fpl$fflt          fz_ws.l(fflt_clz.o)
+    0x08004574   0x08004574   0x00000026   Code   RO         4332    x$fpl$ffltu         fz_ws.l(fflt_clz.o)
+    0x0800459a   0x0800459a   0x00000002   PAD
+    0x0800459c   0x0800459c   0x00000068   Code   RO         4338    x$fpl$fleqf         fz_ws.l(fleqf.o)
+    0x08004604   0x08004604   0x00000102   Code   RO         4340    x$fpl$fmul          fz_ws.l(fmul.o)
+    0x08004706   0x08004706   0x0000008c   Code   RO         4572    x$fpl$fnaninf       fz_ws.l(fnaninf.o)
+    0x08004792   0x08004792   0x0000000a   Code   RO         4574    x$fpl$fretinf       fz_ws.l(fretinf.o)
+    0x0800479c   0x0800479c   0x00000062   Code   RO         4342    x$fpl$frleqf        fz_ws.l(frleqf.o)
+    0x080047fe   0x080047fe   0x00000002   PAD
+    0x08004800   0x08004800   0x000000ea   Code   RO         4316    x$fpl$fsub          fz_ws.l(faddsub_clz.o)
+    0x080048ea   0x080048ea   0x00000000   Code   RO         4584    x$fpl$usenofp       fz_ws.l(usenofp.o)
+    0x080048ea   0x080048ea   0x00000010   Data   RO         3153    .constdata          system_stm32f1xx.o
+    0x080048fa   0x080048fa   0x000005f2   Data   RO         4200    .constdata          oledfont.o
+    0x08004eec   0x08004eec   0x0000023c   Data   RO         4201    .constdata          oledfont.o
+    0x08005128   0x08005128   0x00000005   Data   RO         4202    .constdata          oledfont.o
+    0x0800512d   0x0800512d   0x00000040   Data   RO         4203    .constdata          oledfont.o
+    0x0800516d   0x0800516d   0x00000003   PAD
+    0x08005170   0x08005170   0x00000041   Data   RO         3198    .conststring        menuconfig.o
+    0x080051b1   0x080051b1   0x00000003   PAD
+    0x080051b4   0x080051b4   0x00000020   Data   RO         4822    Region$$Table       anon$$obj.o
 
 
-    Execution Region RW_IRAM1 (Exec base: 0x20000000, Load base: 0x08005204, Size: 0x00000fa0, Max: 0x00005000, ABSOLUTE, COMPRESSED[0x00000060])
+    Execution Region RW_IRAM1 (Exec base: 0x20000000, Load base: 0x080051d4, Size: 0x00000fa0, Max: 0x00005000, ABSOLUTE, COMPRESSED[0x00000060])
 
     Exec Addr    Load Addr    Size         Type   Attr      Idx    E Section Name        Object
 
@@ -3288,12 +3288,12 @@ Image component sizes
        194         14          0          0         16     412799   main.o
       2234         84          0        156       1040      19966   menu.o
       1980         66          0         92          0      15578   menu_tool.o
-       368         58         65         36        408       9661   menuconfig.o
+       320         58         65         36        408       9605   menuconfig.o
       1694         66          0         20        214      10708   menufontshow.o
        516         32          0          0          0       2609   oled.o
          0          0       2163          0          0        729   oledfont.o
        216         32          0          0        156       1654   spi.o
-        64         26        236          0       1536        800   startup_stm32f103xb.o
+        64         26        236          0       1536        832   startup_stm32f103xb.o
        164         28          0         12          0       5745   stm32f1xx_hal.o
       1134         56          0          0          0       7638   stm32f1xx_hal_adc.o
        198         14          0          0          0      28515   stm32f1xx_hal_cortex.o
@@ -3310,7 +3310,7 @@ Image component sizes
        184         24          0          0         72       2090   tim.o
 
     ----------------------------------------------------------------------
-     15836        824       2518        344       3560    1004661   Object Totals
+     15788        824       2518        344       3560    1004637   Object Totals
          0          0         32          0          0          0   (incl. Generated)
         28          0          6          0          2          0   (incl. Padding)
 
@@ -3386,15 +3386,15 @@ Image component sizes
 
       Code (inc. data)   RO Data    RW Data    ZI Data      Debug   
 
-     18478       1006       2518        344       3656     997477   Grand Totals
-     18478       1006       2518         96       3656     997477   ELF Image Totals (compressed)
-     18478       1006       2518         96          0          0   ROM Totals
+     18430       1006       2518        344       3656     997453   Grand Totals
+     18430       1006       2518         96       3656     997453   ELF Image Totals (compressed)
+     18430       1006       2518         96          0          0   ROM Totals
 
 ==============================================================================
 
-    Total RO  Size (Code + RO Data)                20996 (  20.50kB)
+    Total RO  Size (Code + RO Data)                20948 (  20.46kB)
     Total RW  Size (RW Data + ZI Data)              4000 (   3.91kB)
-    Total ROM Size (Code + RO Data + RW Data)      21092 (  20.60kB)
+    Total ROM Size (Code + RO Data + RW Data)      21044 (  20.55kB)
 
 ==============================================================================
 

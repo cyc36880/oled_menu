@@ -1,7 +1,7 @@
 #ifndef _oled_h
 #define _oled_h
 
-#include "main.h"//HAL¿â
+#include "menuconfig.h"
 
 #define  u8 unsigned char 
 #define	 u16 unsigned short int

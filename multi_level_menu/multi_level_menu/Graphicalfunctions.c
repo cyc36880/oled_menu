@@ -4,21 +4,20 @@
 // ======================= 图 形 化 函 数 ========================
 
 // 读点
-unsigned char read_point(int16_t x, int16_t y)
+unsigned char ReadPoint(int16_t x, int16_t y)
 {
 	int px = x, py = (int)(y/8);
 	unsigned char dat=0;
 	
 	if(x<0 || y<0) return 0;
-	if(x>= SCREENWIDTH || y>=SCREENHIGH) return 0;
+	if(x>= SCREENWIDTH-1 || y>=SCREENHIGH) return 0;
 	
 	dat = (DisplayBuff[px + py*SCREENWIDTH]>>(y%8)) & 0x01;
 	
 	return dat;
 }
-
 // 画点
-void write_point(int16_t x, int16_t y, uint8_t w_d) 
+void WritePoint(int16_t x, int16_t y, uint8_t w_d) 
 {
 	int px = x, py = (int)(y/8);
 	
@@ -29,6 +28,25 @@ void write_point(int16_t x, int16_t y, uint8_t w_d)
 		DisplayBuff[px + py*SCREENWIDTH] |= (0x01 << (y % 8));
 	else
 		DisplayBuff[px + py*SCREENWIDTH] &= ~(0x01 << (y % 8));
+}
+
+// 读点
+unsigned char read_point(int16_t x, int16_t y)
+{
+	unsigned char point = 0;
+	
+	point = ReadPoint(x, y);
+	return point;
+}
+
+// 画点
+void write_point(int16_t x, int16_t y, uint8_t w_d) 
+{
+	if(GRAPHICSSHOWMANNER == GraphicsRollColor) { //反转显示
+		WritePoint(x,  y,  !read_point(x, y));
+		return;
+	}
+	WritePoint(x,  y,  w_d);
 }
 
 // 画线
@@ -317,4 +335,166 @@ void RotateXY(int *xy, int centerX, int centerY,int x, int y,int Angle,int direc
 		else                                xy[1]= (unsigned int)d;
 	}
 }
+
+
+
+
+
+//--------  折 线 图 ------------
+
+/*
+	功能：内存清零
+	
+	
+*/
+void ClearnMemory(void *m, uint16_t size)
+{
+	uint8_t *p = (uint8_t *) m;
+	while(size--) {
+		*p = 0;
+		p++;
+	}
+}
+
+//折线图内存清零
+void ClearnLineChartMapDat(TypLineChartMap *t)
+{
+	t->Startp = 0;
+	t->Endp = 0;
+	t->RxNum = 0;
+	ClearnMemory(t->dat, sizeof(t->dat));
+}
+
+
+/* 
+	功能：向折线图中填充数据
+	t：折线图指针
+	d：要填充的数据
+
+*/
+void AddDatToLineChartMap(TypLineChartMap *t, uint16_t d)
+{
+	uint8_t width = t->width<128?t->width:128; //宽度限制
+	uint8_t high = t->high<128?t->high:128; //高度限制
+	
+	if(++t->RxNum > 129) { //接收数量
+		t->RxNum = 129;
+	}
+	if(d > t->max ) d = t->max; //限幅
+	d = high * 1.0 / t->max * d;
+	
+	t->dat[t->Endp] = d; //填充数据
+	
+	if(t->RxNum > width) { 
+		if(++t->Startp >= 128) { // 移动起始位置
+			t->Startp = 0;
+		}
+	}
+	if(++t->Endp >= 128) {
+		t->Endp = 0;
+	}
+}
+
+/*
+	功能：折线图绘制
+	t：折线图指针
+	x、y：显示的左上角坐标
+	@ret：最后一个数据在折线图中的显示坐标
+*/
+int16_t *LineChart(TypLineChartMap *t, int16_t x, int16_t y) 
+{
+	static int16_t xy[2] = {0, 0};
+	int16_t posy = 0;   //起始位置的相对y坐标
+	int16_t posy_2 = 0; //结束位置的相对y坐标
+	uint8_t Startp = 0; //数组起始显示位置
+	uint8_t Startp_1 = 0;//数组结束显示位置
+	
+	uint8_t offset=0; //沿x轴的偏移
+	
+	xy[0] = 0; //返回坐标的默认值
+	xy[1] = 0;
+	
+	if(t->RxNum == 0) { //无接收
+		
+	}
+	else if(t->RxNum == 1) { //接收数1，仅显示点
+		
+		posy = y + t->high - t->dat[0];
+		write_point(x, posy, 1);
+		
+		xy[0] = x;
+		xy[1] = posy;
+	}
+	else if(t->RxNum == 2) { //接收数2，仅显示一条线
+		posy = y + t->high - t->dat[0];   //y轴增量反转
+		posy_2 = y + t->high - t->dat[1];
+		DrawLine(x, posy, x+1, posy_2);
+		
+		xy[0] = x + 1;
+		xy[1] = posy_2;
+	}
+	else { //接收多个数，循环显示连续线条
+		Startp = t->Startp;
+		Startp_1 = Startp + 1 >= 128?0:Startp + 1;
+		
+		while(Startp_1 != t->Endp) {
+			posy = y + t->high - t->dat[Startp]; //y轴增量反转
+			posy_2 = y + t->high - t->dat[Startp_1];
+			
+			DrawLine(x+offset, posy, x+offset+1, posy_2);
+			
+			Startp = Startp + 1 >= 128?0:Startp + 1;
+			Startp_1 = Startp + 1 >= 128?0:Startp + 1;
+			
+			offset++;
+		}
+		xy[0] = x+offset-1;
+		xy[1] = posy_2;
+	}
+	return xy;
+}
+
+
+
+// ---------------- 图 片 -------------------
+
+/*
+	功能：图片显示
+
+	size：图片尺寸 max 255 X 255
+	p：图片指针
+	x、y：坐标
+
+	注意：取模格式> 阴码 列行式 逆向
+*/
+void PictureShow(menu_area *target, const uint8_t *Size, const uint8_t *p, int16_t x, int16_t y)
+{
+	uint8_t h,w;
+	bool w_b=0;
+	uint8_t wight = Size[0];
+	uint8_t high  = Size[1];
+	
+	for(h=0; h<high; h++)//字高
+	{
+		for(w=0; w<wight; w++) //字宽
+		{
+			w_b = ( p[ h/8*wight + w] >> (h%8) ) & 1;
+			if(w_b) {
+				if(target == NULL) write_point(w+x, h+y, 1);
+				else               MenuSetPoint(target, w+x, h+y, 1);
+			}
+			else {
+				if(GRAPHICSSHOWMANNER == GraphicsCover) {
+					if(target == NULL) write_point(w+x, h+y, 0);
+					else               MenuSetPoint(target, w+x, h+y, 0);
+				}
+			}
+		}
+	}
+}
+
+
+
+
+
 

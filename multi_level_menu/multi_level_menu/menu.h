@@ -5,6 +5,8 @@
 #include <stdlib.h>  //malloc   所在地
 #include <stdbool.h> //bool     类型所在地
 
+#include "oled.h"
+#include "menuconfig.h"
 
 /*
 特别注意：
@@ -13,8 +15,7 @@
 		
 	每个函数详细的注意事项以及返回值和功能等，请跳转该函数上部查看
 	
-	该菜单使用malloc申请空间，无free，注意内存溢出。菜单创建大小为40字节，菜单时间队列12字节，
-	特殊功能12字节，请确保heap(堆)大小足够
+	该菜单使用malloc申请空间，无free，注意内存溢出。请确保heap(堆)大小足够
 */
 
 // ================================ 菜 单 ==============================
@@ -36,10 +37,10 @@ enum MenuState
 enum SpecialInformation
 {
 	MenuTime = 0x01, //时间列表
-	EnterMenu = 0x02, // 进入菜单，if末尾加return
-	ExitMenu = 0x04,  // 退出菜单，if末尾加return
-	EnterShowMenuList = 0x08, // 进入显示菜单列表，if末尾加return
-	ExitShowMenuList = 0x10, // 退出显示菜单列表，if末尾加return
+	EnterMenu = 0x02, // 进入菜单，if末尾建议加return
+	ExitMenu = 0x04,  // 退出菜单，if末尾建议加return
+	EnterShowMenuList = 0x08, // 进入显示菜单列表，if末尾建议加return
+	ExitShowMenuList = 0x10, // 退出显示菜单列表，if末尾建议加return
 	
 	/*****上述功能的改进*****/
 	
@@ -48,6 +49,9 @@ enum SpecialInformation
 	/******** 其 它 **********/
 	MenuHaveOverall = 0x40,//不可使用，其它功能占用该位。菜单列表全局
 };
+
+
+
 
 //菜单时间队列
 typedef struct MENU_TIMEMS
@@ -92,6 +96,8 @@ menu_area *AddToMenuList(int16_t x, int16_t y, uint16_t width, uint16_t high, bo
 //功能：链接到父类
 void LinkToParentClass(menu_area *target, menu_area *source);
 
+
+
 //功能：对菜单上下偏移寻址 
 menu_area *MenuListAddressing(menu_area *target, bool upordown, uint16_t offset);
 
@@ -116,6 +122,9 @@ menu_area *MenuListShowHead(menu_area *target);
 //功能：返回当前显示列表的尾，即使它不能被选中
 menu_area *MenuListShowTail(menu_area *target);
 
+
+
+
 //功能：目标菜单首位相连，空指针跳过
 void MakeMenuListRing(menu_area *target);
 
@@ -123,7 +132,6 @@ void MakeMenuListRing(menu_area *target);
 MenuListOverall *MenuOverall(menu_area *target);
 
 //功能：特殊功能注册
-//注意：该功能会占用specialfeatures，使用该功能的菜单不要手动修改specialfeatures
 void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms);
 
 //功能：特殊功能检查，触发返回1，否则返回0
@@ -131,8 +139,15 @@ bool TriggerCheck(menu_area *target, enum SpecialInformation function);
 
 
 extern menu_area * TargetMenu; // 实时目标菜单
+
 extern enum MenuState StatusInformation; //输入设备状态
+extern enum MenuState StatusInformationAlways; // 输入设备状态 <不会改变>
+
 extern uint32_t MenuSize;//菜单申请的空间大小
+
+
+
+
 
 // =========================== 屏 幕 ====================================
 
@@ -142,6 +157,19 @@ extern uint32_t MenuSize;//菜单申请的空间大小
 //向上整除 x=8 -> 1, x=9 -> 2
 #define DIVIDEUP(x) (x*10/8%10 ? x/8+1:x/8)
 
+enum ScreenShowManner //屏幕显示方式
+{
+	ScreenNormal,  //正常
+	ScreenRollback //反转
+};
+
+enum GraphicsShowManner //图形显示方式
+{
+	GraphicsNormal,  //正常
+	GraphicsCover, //覆盖
+	GraphicsRollColor //反色
+};
+
 //屏幕参数
 typedef struct
 {
@@ -150,12 +178,18 @@ typedef struct
 	bool refresh; //刷新标志
 }TypedefScreen;
 
+extern enum ScreenShowManner SCREENSHOWMANNER; //屏幕显示方式
+extern enum GraphicsShowManner GRAPHICSSHOWMANNER;//图形显示方式
+
 extern unsigned char DisplayBuff[]; // 屏幕显示缓存
 extern TypedefScreen ScreenPara; // 屏幕具体参数
 
 
 // 功能：在目标菜单的相对位置画点
 void MenuSetPoint(menu_area *target, int16_t x, int16_t y, bool w_b); 
+
+
+
 
 
 

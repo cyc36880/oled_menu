@@ -1,6 +1,5 @@
 #include "oled.h"
 #include "menu.h"
-#include "spi.h" //HAL函数库
 
 /*............延时..............*/
 void delay_ms(unsigned int ms)
@@ -21,7 +20,7 @@ void OLED_WR_Byte(u8 dat,u8 cmd)
 	OLED_CS_Set();
 	OLED_DC_Set();   	  
 } 
-	void OLED_Set_Pos(unsigned char x, unsigned char y)    //坐标位置
+void OLED_Set_Pos(unsigned char x, unsigned char y)    //坐标位置
 { 
 	OLED_WR_Byte(0xb0+y,OLED_CMD);
 	OLED_WR_Byte(((x&0xf0)>>4)|0x10,OLED_CMD);
@@ -50,7 +49,13 @@ void disp_flush(void)
 		OLED_Set_Pos(0,i);
 		for(j = 0; j < SCREENWIDTH; j++)
 		{
-			OLED_WR_Byte(DisplayBuff[i*SCREENWIDTH + j], OLED_DATA);
+			if(SCREENSHOWMANNER == ScreenNormal) { //正常显示
+				OLED_WR_Byte(DisplayBuff[i*SCREENWIDTH + j], OLED_DATA);
+			}
+			else if(SCREENSHOWMANNER == ScreenRollback) { //反转显示
+				OLED_WR_Byte(~DisplayBuff[i*SCREENWIDTH + j], OLED_DATA);
+			}
+			
 		}
 	}
 }

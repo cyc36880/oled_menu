@@ -22,14 +22,13 @@
 #include "dma.h"
 #include "spi.h"
 #include "tim.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "oled.h"
 #include "menu.h"
-#include "menuconfig.h"
 
 /* USER CODE END Includes */
 
@@ -98,7 +97,9 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM2_Init();
   MX_ADC1_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+	__HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
 	
 	OLED_Init(); // OLED初始化
 	MakeMenu(); //菜单列表初始化

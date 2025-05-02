@@ -1,19 +1,16 @@
 #include "menu.h"
 #include "Graphicalfunctions.h"
-#include "oled.h"
-#include "main.h" //HAL函数库
 
-extern uint32_t adcbuf[];
 
 // ================================= 设 备 ========================================
 
-enum MenuState StatusInformation; //输入设备状态
-
+enum MenuState StatusInformation = Menu_noaction; //输入设备状态
+enum MenuState StatusInformationAlways = Menu_noaction; // 输入设备状态 <不会改变>
 /*
 	* 功能：输入设备状态
 */
 
-enum MenuState Scan(void)
+static enum MenuState Scan(void)
 {
 	static enum MenuState adcstate = Menu_noaction;
 	
@@ -47,7 +44,7 @@ enum MenuState Scan(void)
 //	return Menu_noaction;
 }
 
-bool KeyState(enum MenuState *k)
+static bool KeyState(enum MenuState *k)
 {
 	static enum MenuState KeySt = Menu_noaction;
 	static uint8_t count=0;
@@ -63,6 +60,7 @@ bool KeyState(enum MenuState *k)
 				return 1;	
 			}
 			KeySt = Scan();
+			StatusInformationAlways = KeySt;
 		}
 	}
 	return 0;
@@ -75,7 +73,7 @@ static void EquipmentState(void)
 {
 	if(KeyState(&StatusInformation)){ //按键扫描
 		if(StatusInformation != Menu_noaction){ //非空闲
-			ScreenPara.refresh = 1;
+			ScreenPara.refresh = 1; //屏幕刷新
 		}
 	}
 }
@@ -85,12 +83,14 @@ static void EquipmentState(void)
 
 const unsigned int BUFFWEIGH = SCREENWIDTH;
 const unsigned int BUFFHIGH  = DIVIDEUP(SCREENHIGH);
+enum ScreenShowManner SCREENSHOWMANNER = ScreenNormal; //屏幕显示方式
+enum GraphicsShowManner GRAPHICSSHOWMANNER = GraphicsNormal; //图形显示方式
 
 // 定义屏幕信息
 TypedefScreen ScreenPara = {BUFFWEIGH, BUFFHIGH, 1};
 
 // 显示缓存
-unsigned char DisplayBuff[BUFFWEIGH* BUFFHIGH] = {0};
+unsigned char DisplayBuff[BUFFWEIGH * BUFFHIGH] = {0};
 
 
 //清空显示缓存
@@ -494,7 +494,7 @@ void MenuSetPoint(menu_area *target, int16_t x, int16_t y, bool w_b)
 	px = target->x + x;
 	py = target->y + y;
 	
-	if(x>target->width || y>target->high) return; // 判断是否超出菜单边界
+	if(x>=target->width || y>=target->high) return; // 判断是否超出菜单边界
 	if(x<0 || y<0) return;
 	
 	write_point(px, py, w_b);
@@ -518,9 +518,9 @@ static void DrawMenuRectangle(menu_area *target)
 	y2 = y1 + target->high-1;
 	
 	DrawLine(x1, y1, x2, y1);
-	DrawLine(x1, y1, x1, y2);
+	DrawLine(x1, y1+1, x1, y2-1);
 	DrawLine(x2, y2, x1, y2);
-	DrawLine(x2, y2, x2, y1);
+	DrawLine(x2, y2-1, x2, y1+1);
 }
 
 
@@ -595,7 +595,7 @@ void MenuHeartTime(void)
 				p->menu_time->counttime=0; //计时复位
 				p->specfeattrigflag |= MenuTime; //赋值状态
 				if( (p->specialfeatures)& MenuTimeForce ){ //是否强制执行
-					if(!(p->menuinterface)){
+					if(p->menuinterface){ //指向地址存在
 						p->menuinterface(p); //执行指向函数
 					}
 				}

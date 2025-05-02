@@ -6,6 +6,7 @@
 "multi_level_menu\dma.o"
 "multi_level_menu\spi.o"
 "multi_level_menu\tim.o"
+"multi_level_menu\usart.o"
 "multi_level_menu\stm32f4xx_it.o"
 "multi_level_menu\stm32f4xx_hal_msp.o"
 "multi_level_menu\stm32f4xx_hal_adc.o"
@@ -27,6 +28,7 @@
 "multi_level_menu\stm32f4xx_hal_spi.o"
 "multi_level_menu\stm32f4xx_hal_tim.o"
 "multi_level_menu\stm32f4xx_hal_tim_ex.o"
+"multi_level_menu\stm32f4xx_hal_uart.o"
 "multi_level_menu\system_stm32f4xx.o"
 "multi_level_menu\menu.o"
 "multi_level_menu\oled.o"
@@ -34,7 +36,7 @@
 "multi_level_menu\menufontshow.o"
 "multi_level_menu\graphicalfunctions.o"
 "multi_level_menu\oledfont.o"
---strict --scatter "multi_level_menu\multi_level_menu.sct"
+--nodebug --strict --scatter "multi_level_menu\multi_level_menu.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers
 --list "C:\Users\ZIShen\Documents\multi_level_menu.map" -o multi_level_menu\multi_level_menu.axf

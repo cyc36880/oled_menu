@@ -12,8 +12,6 @@
 	在中断中：
 		以下函数如要使用，请先仿照 MenuHeartTime() 函数对ScreenPara.refresh进行判断，
 		确认处在释放状态后，先将该值置1，再使用以下函数。如不释放，屏幕将刷新
-	在函数中：
-		以下函数如要使用，需要先将ScreenPara.refresh置1，无需判断，再使用以下函数。如不释放，屏幕将刷新
 		
 	每个函数详细的注意事项以及返回值和功能等，请跳转该函数上部查看
 	
@@ -44,6 +42,10 @@ enum SpecialInformation
 	ExitMenu = 0x04,  // 退出菜单
 	EnterShowMenuList = 0x08, // 进入显示菜单列表
 	ExitShowMenuList = 0x10, // 退出显示菜单列表
+	
+	/*****上述功能的改进*****/
+	
+	MenuTimeForce = 0x20, //时间列表强制执行。 与MenuTime配合使用，否则无效，无需对此判断，if末尾加return
 };
 
 

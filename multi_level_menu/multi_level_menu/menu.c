@@ -437,8 +437,10 @@ void AddToSpecialFunction(menu_area *target, uint16_t function, uint16_t ms)
 	
 	if(function & MenuTime) { //时间队列
 		AddToMenuTimeList(target, ms);
-		
-		if( (function &(~MenuTime)) == 0) return;
+		if( function & MenuTimeForce ){ //强制执行注册
+			target->userinformation = MenuTimeForce;
+		}
+		if( (function &(~(MenuTime | MenuTimeForce))) == 0) return;
 	}
 	
 	if(SpecialFunction == NULL){
@@ -532,6 +534,36 @@ static void DrawMenuRectangle(menu_area *target)
 
 menu_area * TargetMenu = NULL; // 实时目标菜单
 
+//以下两函数与上完全相同，为防止同时使用该函数，故设置专用函数
+static menu_area *MenuListShowHeadForHeart(menu_area *target)
+{
+	menu_area *targetmenu = target;
+	
+	if(targetmenu == NULL) return NULL;
+	
+	for( ; ; )
+	{
+		if(targetmenu->previous == NULL) return targetmenu; //上一个不存在
+		if(targetmenu->id == MENUHEARDID) return targetmenu;//上一个为头
+		if(targetmenu->previous->menulistend == 1) return targetmenu; //上一个为结尾
+		targetmenu = targetmenu->previous;
+	}
+}
+
+static menu_area *MenuListShowTailForHeart(menu_area *target)
+{
+	menu_area *targetmenu = target;
+	
+	if(targetmenu == NULL) return NULL;
+	
+	for( ; ; )
+	{
+		if(targetmenu->next == NULL) return targetmenu; //下一个为空
+		if(targetmenu->next->id == MENUHEARDID) return targetmenu;//到达菜单列表尾
+		if(targetmenu->menulistend == 1) return targetmenu;//显示菜单尾
+		targetmenu = targetmenu->next;
+	}
+}
 
 /*
 	功能：菜单心跳执行，每1ms执行该函数
@@ -542,7 +574,7 @@ menu_area * TargetMenu = NULL; // 实时目标菜单
 	注意：请在菜单初始化的结尾置一该标志，防止中断与main同时调用相关函数
 */
 bool MenuHeartTimeStart = 0; //时间列表开始标志
-
+static bool RefreshFlagForHeart = 0; //时间列表刷新标志
 
 void MenuHeartTime(void)
 {
@@ -557,18 +589,16 @@ void MenuHeartTime(void)
 	
 	if(Targetph==NULL) return; //检查地址是否有效
 	if(p == NULL) return; //检查是否创建时间列表
-	if(StatusInformation != Menu_noaction) return; // 判断按键是否处于释放状态
-	if(ScreenPara.refresh==1) return;  // 判断屏幕刷新是否处于释放状态
-		
-	ScreenPara.refresh=1; //屏幕刷新，也用于防冲撞
 	
-	Targetph = MenuListShowHead(Targetph);// 找到开始显示的头
-	MenuShowTail = MenuListShowTail(Targetph);//显示菜单尾
+	RefreshFlagForHeart=1; //屏幕刷新
+	
+	Targetph = MenuListShowHeadForHeart(Targetph);// 找到开始显示的头
+	MenuShowTail = MenuListShowTailForHeart(Targetph);//显示菜单尾
 	
 	for( ; ; )
 	{
 		Targetp = Targetph;
-		if(MenuListShowHead(p->target) != MenuListShowHead(TargetMenu)) goto loop; //判断是否处于同一显示菜单列表
+		if(MenuListShowHeadForHeart(p->target) != MenuListShowHeadForHeart(TargetMenu)) goto loop; //判断是否处于同一显示菜单列表
 		for( ; ; ) // 是否在显示页面中
 		{
 			if(Targetp == p->target) break; // 在该页面
@@ -579,14 +609,15 @@ void MenuHeartTime(void)
 		if(++(p->counttime) >= p->timems){
 			p->counttime=0;
 			p->target->userinformation |= MenuTime;
-//			(p->target->menuinterface)(p->target); //执行指向函数
-			// 打开上面注释后，记的在TriggerCheck if判断MenuTime(时间列表)结尾处加return
+			if( (p->target->userinformation) & MenuTimeForce ){
+				(p->target->menuinterface)(p->target); //执行指向函数
+			}
 			refreshflag = 1;
 		}
 		loop:; // 不在该页面
 		if(p->next == NULL) { //到达时间列表尾部
 			if( !refreshflag ){
-				ScreenPara.refresh = 0; 
+				RefreshFlagForHeart = 0; 
 			}
 			return;
 		}
@@ -735,6 +766,11 @@ static void MenuCheckedStyle(menu_area *target)
 void MenuRun(void)
 {
 	EquipmentState(); //输入设备
+	
+	if(RefreshFlagForHeart){ //时间列表刷新标志
+		RefreshFlagForHeart = 0;
+		ScreenPara.refresh = 1;
+	}
 	
 	if(ScreenPara.refresh)
 	{

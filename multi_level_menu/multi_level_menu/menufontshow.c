@@ -1,5 +1,5 @@
 #include "menufontshow.h"
-#include "oled.h"
+#include "Graphicalfunctions.h"
 
 extern const unsigned char F8X16_SizeInf[2]; //下面字符编码的尺寸信息 宽x高
 //阴码 列行式 逆向

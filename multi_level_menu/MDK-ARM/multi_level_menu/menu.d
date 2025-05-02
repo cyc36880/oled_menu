@@ -3,6 +3,7 @@ multi_level_menu\menu.o: ..\multi_level_menu\menu.h
 multi_level_menu\menu.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 multi_level_menu\menu.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
 multi_level_menu\menu.o: D:\E#\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+multi_level_menu\menu.o: ..\multi_level_menu\Graphicalfunctions.h
 multi_level_menu\menu.o: ..\multi_level_menu\oled.h
 multi_level_menu\menu.o: ../Core/Inc/main.h
 multi_level_menu\menu.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h
@@ -27,6 +28,9 @@ multi_level_menu\menu.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_exti.
 multi_level_menu\menu.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h
 multi_level_menu\menu.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma_ex.h
 multi_level_menu\menu.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_cortex.h
+multi_level_menu\menu.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_adc.h
+multi_level_menu\menu.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_adc.h
+multi_level_menu\menu.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_adc_ex.h
 multi_level_menu\menu.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash.h
 multi_level_menu\menu.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ex.h
 multi_level_menu\menu.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ramfunc.h

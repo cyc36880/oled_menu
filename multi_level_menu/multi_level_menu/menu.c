@@ -1,6 +1,9 @@
 #include "menu.h"
+#include "Graphicalfunctions.h"
 #include "oled.h"
-#include "main.h"
+#include "main.h" //HAL函数库
+
+extern uint32_t adcbuf[];
 
 // ================================= 设 备 ========================================
 
@@ -13,9 +16,36 @@ enum MenuState StatusInformation; //输入设备状态
 
 enum MenuState Scan(void)
 {
+	static enum MenuState adcstate = Menu_noaction;
+	
 	if(HAL_GPIO_ReadPin(K0_GPIO_Port, K0_Pin) == GPIO_PIN_RESET) return Menu_down;
 	else if(HAL_GPIO_ReadPin(K1_GPIO_Port, K1_Pin) == GPIO_PIN_RESET) return Menu_Sub;
-	return Menu_noaction;
+	
+	if(adcbuf[0] > (1630 + 1500)){
+		adcstate = Menu_Sub;
+		return adcstate;
+	} 
+	else if(adcbuf[0]<(1630 + 200) && adcbuf[0]>(1630 - 200)) adcstate = Menu_noaction;
+	else if(adcbuf[0] < (1630 - 1500)) {
+		adcstate = Menu_Father;
+		return adcstate;
+	}
+	
+	if(adcbuf[1] > (1630 + 1500)){
+		adcstate = Menu_down;
+		return adcstate;
+	} 
+	else if(adcbuf[1]<(1630 + 200) && adcbuf[1]>(1630 - 200)) adcstate = Menu_noaction;
+	else if(adcbuf[1] < (1630 - 1500)){
+		adcstate = Menu_up;
+		return adcstate;
+	} 
+	
+	
+	return adcstate;
+	
+	
+//	return Menu_noaction;
 }
 
 bool KeyState(enum MenuState *k)

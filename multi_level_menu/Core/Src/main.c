@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "dma.h"
 #include "spi.h"
 #include "tim.h"
@@ -61,6 +62,8 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+uint32_t adcbuf[2] = {0};
+
 /* USER CODE END 0 */
 
 /**
@@ -94,12 +97,13 @@ int main(void)
   MX_DMA_Init();
   MX_SPI1_Init();
   MX_TIM2_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 	
 	OLED_Init(); // OLED初始化
 	MakeMenuHeard(); //菜单列表初始化
 	HAL_TIM_Base_Start_IT(&htim2);
-	
+	HAL_ADC_Start_DMA(&hadc1, adcbuf, 2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
